@@ -1,0 +1,43 @@
+# type: ignore
+# (Pylance tries to type-check this file in VS Code.)
+
+[flake8]
+max-line-length = 88
+exclude = .git, __pycache__, .venv/
+ignore =
+    # E203 whitespace before ':'
+    # reason: black handles it
+    E203,
+    # W503 line break before binary operator
+    # reason: black handles it
+    W503,
+    # W291 trailing whitespace
+    # reason: (sometimes we need it in string literals, and black will catch it anyway)
+    W291,
+    # W293 blank line contains whitespace
+    # reason: (sometimes we need it in string literals, and black will catch it anyway)
+    W293,
+    # E501 line too long
+    # reason: black handles it
+    E501,
+    # E731 do not assign a lambda expression, use a def
+    # reason: sometimes useful
+    E704,
+    # E704 multiple statements on one line (def)
+    # reason: black formats it this way sometimes
+    E731,
+    # F403 'from module import *' used; unable to detect undefined names
+    # reason: often do 'from lib.prelude import *', mypy will catch errors
+    F403,
+    # F405 Name may be undefined, or defined from star imports: module
+    # reason: often do 'from lib.prelude import *', mypy will catch errors
+    F405,
+    U101,
+per-file-ignores =
+    **/__init__.py:F401
+enable-extensions = U100
+
+unused-arguments-ignore-abstract-functions = True
+unused-arguments-ignore-overload-functions = True
+unused-arguments-ignore-override-functions = True
+unused-arguments-ignore-variadic-names = True

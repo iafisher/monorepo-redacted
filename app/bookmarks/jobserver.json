@@ -1,0 +1,56 @@
+{
+  "jobs": [
+    {
+      "name": "bookmarks::import_from_chrome",
+      "cmd": ["bookmarks", "import", "chrome"],
+      "machines": ["laptop"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 120,
+          "start_time_of_day": "7am"
+        }
+      }
+    },
+    {
+      "name": "bookmarks::import_from_rss",
+      "cmd": ["bookmarks", "import", "rss"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["5pm"]
+        }
+      }
+    },
+    {
+      "name": "bookmarks::import_from_zulip",
+      "cmd": ["bookmarks", "import", "zulip"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["5pm"]
+        }
+      }
+    },
+    {
+      "name": "bookmarks::import_from_hn",
+      "cmd": ["bookmarks", "import", "hn"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["3:30pm"]
+        }
+      }
+    },
+    {
+      "name": "bookmarks::prune",
+      "cmd": ["bookmarks", "prune", "-days-to-retain", "14"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "weekly": {
+          "times_of_day": ["3:30pm"],
+          "days_of_week": ["wed"]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+from .kglogging import init

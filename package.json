@@ -1,0 +1,27 @@
+{
+  "name": "monorepo",
+  "private": true,
+  "scripts": {
+    "build": "node frontend/build.mjs dev",
+    "build-prod": "rm -rf frontend/dist/*.* && npm run check && node frontend/build.mjs prod",
+    "ibuild": "node frontend/build.mjs watch",
+    "check": "npx tsc -noEmit -p frontend/tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/feather-icons": "^4.29.4",
+    "@types/markdown-it": "^14.1.2",
+    "@types/mithril": "^2.0.12",
+    "@typescript-eslint/eslint-plugin": "^5.59.9",
+    "@typescript-eslint/parser": "^5.59.9",
+    "esbuild": "0.27.3",
+    "esbuild-sass-plugin": "^3.6.0",
+    "eslint": "^8.42.0",
+    "sass": "^1.97.3",
+    "typescript": "5.0"
+  },
+  "dependencies": {
+    "feather-icons": "^4.29.2",
+    "markdown-it": "^14.1.0",
+    "mithril": "^2.3.8"
+  }
+}

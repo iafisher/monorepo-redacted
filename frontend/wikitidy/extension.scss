@@ -1,0 +1,111 @@
+#wikitidy-overlay {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #111;
+    color: #f8fafc;
+    border: 1px solid #2f2f2f;
+    border-radius: 8px;
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+    font-size: 13px;
+}
+
+.wikitidy-button {
+    background: transparent;
+    color: inherit;
+    border: 1px solid #3f3f3f;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+}
+
+.wikitidy-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.wikitidy-button:hover:not(:disabled),
+.wikitidy-icon-button:hover:not(:disabled) {
+    border-color: #f8fafc;
+}
+
+.wikitidy-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid #3f3f3f;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 0;
+    color: inherit;
+}
+
+#wikitidy-status {
+    color: #cbd5f5;
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#wikitidy-status.hidden {
+    display: none;
+}
+
+.wikitidy-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+    font-size: 13px;
+}
+
+.wikitidy-modal,
+.wikitidy-modal h2 {
+    color: #f8fafc !important;
+}
+
+.wikitidy-modal h2 {
+    margin: 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.wikitidy-modal .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wikitidy-modal label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wikitidy-modal .actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.wikitidy-modal button {
+    background: #0f172a;
+    color: #f8fafc;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+}

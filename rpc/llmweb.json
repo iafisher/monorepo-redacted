@@ -1,0 +1,74 @@
+{
+  "types": [
+    {
+      "name": "Message",
+      "fields": [
+        { "name": "message_id", "type": "int" },
+        { "name": "role", "type": "string" },
+        { "name": "content", "type": "string" },
+        { "name": "vote", "type": "string" },
+        { "name": "time_created", "type": "datetime" }
+      ]
+    },
+    {
+      "name": "ConversationResponse",
+      "fields": [
+        { "name": "model", "type": "string" },
+        { "name": "messages", "type": "Message[]" },
+        { "name": "token_count", "type": "int" },
+        { "name": "llm_conversation_id", "type": "int" }
+      ]
+    },
+    {
+      "name": "StartRequest",
+      "fields": [{ "name": "model", "type": "string?" }]
+    },
+    {
+      "name": "StartResponse",
+      "fields": [{ "name": "conversation_id", "type": "int" }]
+    },
+    {
+      "name": "VoteRequest",
+      "fields": [
+        { "name": "message_id", "type": "int" },
+        { "name": "vote", "type": "string" }
+      ]
+    },
+    {
+      "name": "VoteResponse",
+      "fields": []
+    },
+    {
+      "name": "PromptRequest",
+      "fields": [
+        { "name": "conversation_id", "type": "int" },
+        { "name": "message", "type": "string" }
+      ]
+    },
+    {
+      "name": "FetchConversationsResponseItem",
+      "fields": [
+        { "name": "conversation_id", "type": "int" },
+        { "name": "title", "type": "string" },
+        { "name": "model", "type": "string" },
+        { "name": "time_created", "type": "datetime" },
+        { "name": "message_count", "type": "int" }
+      ]
+    },
+    {
+      "name": "FetchConversationsResponse",
+      "fields": [
+        { "name": "conversations", "type": "FetchConversationsResponseItem[]" }
+      ]
+    },
+    {
+      "name": "TranscriptResponse",
+      "fields": [
+        { "name": "raw", "type": "any[]" },
+        { "name": "universal", "type": "any[]" }
+      ]
+    }
+  ],
+  "python_file": "app/llmweb/rpc.py",
+  "typescript_file": "frontend/llmweb/rpc.ts"
+}

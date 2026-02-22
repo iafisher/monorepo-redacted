@@ -1,0 +1,35 @@
+{
+  "jobs": [
+    {
+      "name": "testjob",
+      "cmd": ["date"],
+      "machines": ["laptop"],
+      "debug_env": true,
+      "schedule": {
+        "daily": {
+          "times_of_day": ["11:59pm"]
+        }
+      }
+    },
+    {
+      "name": "testfail",
+      "cmd": ["this_command_does_not_exist"],
+      "machines": ["laptop"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["11:59pm"]
+        }
+      }
+    },
+    {
+      "name": "heartbeat",
+      "cmd": ["touch", "heartbeat.empty"],
+      "machines": ["laptop", "homeserver"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 5
+        }
+      }
+    }
+  ]
+}

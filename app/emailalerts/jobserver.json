@@ -1,0 +1,15 @@
+{
+  "jobs": [
+    {
+      "name": "emailalerts::flush",
+      "cmd": ["emailalerts", "flush"],
+      "machines": ["homeserver", "laptop"],
+      "debug_env": true,
+      "schedule": {
+        "hourly": {
+          "interval_mins": 30
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "jobs": [
+    {
+      "name": "obsidian::tidy",
+      "cmd": ["obsidian", "tidy", "-write"],
+      "machines": ["laptop"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["3:15am"]
+        }
+      }
+    },
+    {
+      "name": "obsidian::snapshot",
+      "cmd": ["obsidian", "snapshot", "main", "personal-site", "-no-push"],
+      "machines": ["laptop"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 15
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -eu
+
+main() {
+    d="$(dirname "$(realpath "$0")")"
+    cd "$d"
+    cmd="$1"
+    lib="${cmd//-/_}"
+    shift
+    export KG_OVERRIDE_DB_NAME=testdb
+    export KG_PROGRAM_NAME="$cmd"
+    exec .venv/bin/python3 "app/$lib/main.py" "$@"
+}
+
+main "$@"

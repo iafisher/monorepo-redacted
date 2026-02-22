@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "target": "ES6",
+    "allowJs": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "lib": ["DOM", "DOM.Iterable", "ES5", "ES6", "ES2017"],
+  },
+  "include": ["**/*.ts"],
+}

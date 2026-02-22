@@ -1,0 +1,46 @@
+{
+  "jobs": [
+    {
+      "name": "iafisher::stats",
+      "cmd": ["iafisher", "stats"],
+      "machines": ["laptop"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["11:45pm"]
+        }
+      }
+    },
+    {
+      "name": "iafisher::nightly_upload",
+      "cmd": ["iafisher", "mdpages", "upload"],
+      "machines": ["laptop"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["11:50pm"]
+        }
+      }
+    },
+    {
+      "name": "iafisher::db_backup",
+      "cmd": [
+        "db",
+        "backup",
+        "save",
+        "-prefix",
+        "iafisher-site",
+        "-dbuser",
+        "iafisher",
+        "-dbname",
+        "iafisher",
+        "-ssh-here-first",
+        "iafisher.com"
+      ],
+      "machines": ["homeserver"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["2:30am"]
+        }
+      }
+    }
+  ]
+}

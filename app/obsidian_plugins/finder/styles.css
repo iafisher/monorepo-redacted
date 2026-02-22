@@ -1,0 +1,77 @@
+.finder-modal .modal-content {
+    padding: 0;
+    min-width: 500px;
+    max-width: 600px;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+input[type="text"].finder-input {
+    width: 100%;
+    padding: 20px 10px;
+    font-size: 1.3em;
+    border: none;
+    border-bottom: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    outline: none;
+    margin-top: 5px; /* give a little room from the 'X' button */
+    margin-bottom: 20px;
+}
+
+.finder-input:focus {
+    border-bottom-color: var(--interactive-accent);
+}
+
+.finder-results {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.finder-result {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+
+.finder-result:hover {
+    background: var(--background-modifier-hover);
+}
+
+.finder-result.selected {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.finder-result-title {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.finder-result-name {
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.finder-result.selected .finder-result-title {
+    opacity: 0.9;
+}
+
+.finder-result-snippet {
+    margin-top: 10px;
+    font-family: monospace;
+    white-space: nowrap; /* keep it on one line */
+    overflow: hidden; /* hide overflow */
+    text-overflow: ellipsis; /* show “…” when it’s too long */
+}
+
+.finder-result-snippet .match {
+    font-weight: bold;
+    color: #ffd54f;
+}
+
+.finder-result-snippet .truncated::before {
+    content: "…";
+}

@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "iafisher: wikitidy",
+  "version": "0.1.0",
+  "description": "Copy-edit Wikipedia source using a custom LLM backend.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://localhost:7800/*",
+    "https://homeserver.tail5b2358.ts.net/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.wikipedia.org/w/index.php*",
+        "https://*.wikipedia.org/wiki/*"
+      ],
+      "js": ["extension.js"],
+      "css": ["extension.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["codemirror.js"],
+      "matches": ["https://*.wikipedia.org/*"]
+    }
+  ]
+}

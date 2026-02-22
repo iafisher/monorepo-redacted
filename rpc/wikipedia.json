@@ -1,0 +1,29 @@
+{
+  "types": [
+    {
+      "name": "CopyEditLLMRequest",
+      "fields": [
+        { "name": "text", "type": "string" },
+        { "name": "model", "type": "string?" }
+      ]
+    },
+    {
+      "name": "CopyEditLLMResponse",
+      "fields": [
+        { "name": "edited_text", "type": "string" },
+        { "name": "model", "type": "string" },
+        { "name": "conversation_id", "type": "int" }
+      ]
+    },
+    {
+      "name": "CopyEditRegexRequest",
+      "fields": [{ "name": "text", "type": "string" }]
+    },
+    {
+      "name": "CopyEditRegexResponse",
+      "fields": [{ "name": "edited_text", "type": "string" }]
+    }
+  ],
+  "python_file": "app/wikipedia/rpc.py",
+  "typescript_file": "frontend/wikitidy/rpc.ts"
+}

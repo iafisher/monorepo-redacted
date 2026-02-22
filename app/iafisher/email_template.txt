@@ -1,0 +1,1 @@
+Ian Fisher just published a new blog post: "{{TITLE}}" at {{URL}}

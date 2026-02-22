@@ -1,0 +1,377 @@
+html,
+body {
+    height: 100%;
+}
+
+body {
+    font-family: "Inter", "Roboto", sans-serif;
+    background-color: rgb(30, 41, 59);
+    color: #e0e0e0;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.bookmarks-app {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px; /* for small screens */
+}
+
+.tag-filter-section {
+    background-color: rgb(17, 24, 39);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 10px;
+}
+
+.control-panel {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.control-panel .bookmarks-count {
+    padding-left: 10px;
+    font-size: 1.2em;
+}
+
+.control-panel .buttons {
+    margin-left: auto;
+    display: flex;
+    gap: 5px;
+}
+
+h2 {
+    color: white;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+a {
+    color: #87aeef;
+    text-decoration-line: underline;
+    text-decoration-color: #cedefd;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1px;
+}
+
+a:hover {
+    text-decoration-thickness: 2px;
+}
+
+.tag-filter-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tag-filter-badge {
+    background-color: #2c2c2c;
+    border: 2px solid #2c2c2c;
+    color: #e0e0e0;
+    border-radius: 20px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-family: monospace;
+}
+
+.tag-filter-badge.selected,
+.tag-filter-badge:hover {
+    border: 2px solid #0d6efd;
+    box-shadow: 0 2px 12px rgba(13, 110, 253, 0.4);
+    background-color: #1b263b;
+    color: #ffffff;
+}
+
+.bookmarks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.bookmark-item {
+    background-color: rgb(17, 24, 39);
+    border-radius: 8px;
+    padding: 15px;
+    transition: box-shadow 0.3s;
+}
+
+.bookmark-item.archived {
+    opacity: 0.5;
+}
+
+.bookmark-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+@media screen and (max-width: 800px) {
+    .bookmark-header {
+        /* allow buttons to go on new line on small screens */
+        flex-wrap: wrap;
+    }
+}
+
+.bookmark-title {
+    font-size: 1.2em;
+    margin-bottom: 2px;
+}
+
+.bookmark-title-container {
+    flex-grow: 1;
+}
+
+.editing .bookmark-title-container {
+    display: flex;
+}
+
+.domain {
+    font-size: 0.85em;
+    color: #94a3b8;
+    opacity: 0.7;
+}
+
+.subtitle {
+    font-size: 0.85em;
+    color: #94a3b8;
+    opacity: 0.6;
+    margin-top: 2px;
+}
+
+.subtitle .source {
+    font-family: monospace;
+}
+
+.appeal-star {
+    color: #ffd700;
+    font-size: 1.2em;
+    margin-right: 5px;
+}
+
+input,
+input.bookmark-title {
+    color: white;
+    background-color: rgb(17, 24, 39);
+    border: 2px solid #2c2c2c;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: inherit;
+    font-family: inherit;
+    transition:
+        border-color 0.3s,
+        box-shadow 0.3s;
+    outline: none;
+}
+
+input.bookmark-title {
+    flex-grow: 1;
+}
+
+input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+input:hover {
+    border-color: #4a5568;
+}
+
+select {
+    color: white;
+    background-color: rgb(17, 24, 39);
+    border: 2px solid #2c2c2c;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: inherit;
+    font-family: inherit;
+    transition:
+        border-color 0.3s,
+        box-shadow 0.3s;
+    outline: none;
+}
+
+select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+select:hover {
+    border-color: #4a5568;
+}
+
+.bookmark-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.bookmark-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bookmark-details label {
+    color: #87aeef;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.bookmark-details .url-row {
+    display: flex;
+    align-items: center;
+}
+
+.bookmark-details .url-row input {
+    flex-grow: 1;
+}
+
+.tag {
+    background-color: #0d6efd;
+    color: white;
+    min-width: 20px;
+    text-align: center;
+    border-radius: 12px;
+    padding: 2px 6px;
+    margin-right: 5px;
+    font-size: 0.9em;
+    font-family: monospace;
+}
+
+.tag.editable {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.remove-tag {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.remove-tag:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.add-tag {
+    margin-left: auto;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.new-tag-input {
+    flex: 1;
+    max-width: 150px;
+}
+
+.tag-list {
+    display: flex;
+    align-items: center;
+}
+
+.btn {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #0b5ed7;
+}
+
+.tag-filter-section .refresh,
+.tag-filter-section .shuffle {
+    align-self: flex-start;
+}
+
+.error {
+    background-color: rgba(255, 99, 99, 0.15);
+    border: 1.5px solid rgba(255, 99, 99, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    color: #d1d5db;
+    padding: 14px 18px;
+    border-radius: 12px;
+    /* only if you allow message to appear on top of other elements */
+    backdrop-filter: blur(10px);
+    margin-bottom: 20px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    transition: opacity 0.3s;
+    color: white;
+}
+
+.icon-btn:hover {
+    opacity: 0.7;
+}
+
+.icon-btn:active {
+    opacity: 0.5;
+}
+
+/*
+Icons: ARCHIVE DELETE EDIT
+
+Slightly more space between ARCHIVE and DELETE because of how the icons look.
+*/
+.archive-btn {
+    margin-right: 5px;
+}
+
+.delete-btn {
+    margin-right: 3px;
+}
+
+.spinner-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner {
+    width: 80px;
+    height: 80px;
+    border: 8px solid #404040;
+    border-top: 8px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,96 @@
+/* TODO(2025-06): Move utility classes into separate stylesheet. */
+* {
+    box-sizing: border-box;
+    font-family: "Helvetica Neue", sans-serif;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+@media screen and (min-width: 800px) {
+    .col2 {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        gap: 20px;
+    }
+}
+
+.card {
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+    padding: 1.25rem;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+ul.category {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-left: 0;
+}
+
+ul.category button {
+    color: #fff;
+    border: none;
+    font-size: 1rem;
+    padding: 0.6rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border-radius: 10rem;
+    cursor: pointer;
+}
+
+ul.category button.positive {
+    background-color: #28a745;
+}
+
+ul.category button.neutral {
+    background-color: #6c757d;
+}
+
+ul.category button.negative {
+    background-color: #dc3545;
+}
+
+ul.category button.fulfilled {
+    cursor: initial;
+    opacity: 50%;
+    text-decoration: line-through;
+}
+
+.date-select {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 10px;
+    row-gap: 5px;
+}
+
+.date-select label {
+    white-space: nowrap;
+}
+
+.date-select label input {
+    margin-right: 5px;
+}
+
+li .entry {
+    display: flex;
+    column-gap: 5px;
+    font-size: 0.9rem;
+}
+
+li .entry .time {
+    color: #6c757d;
+}
+
+li .entry .trash {
+    /* align vertically with text */
+    padding-top: 1.5px;
+    cursor: pointer;
+}

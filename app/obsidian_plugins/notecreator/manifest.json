@@ -1,0 +1,10 @@
+{
+  "id": "notecreator",
+  "name": "iafisher: Note Creator",
+  "version": "0.0.1",
+  "minAppVersion": "0.15.0",
+  "description": "Custom dialog to create a new note",
+  "author": "Ian Fisher",
+  "authorUrl": "https://iafisher.com",
+  "isDesktopOnly": true
+}

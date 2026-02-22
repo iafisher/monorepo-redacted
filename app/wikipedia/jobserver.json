@@ -1,0 +1,14 @@
+{
+  "jobs": [
+    {
+      "name": "wikipedia::tidy::nightly",
+      "cmd": ["wikipedia", "tidy", "nightly", "-vital-level-3"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["11:30pm"]
+        }
+      }
+    }
+  ]
+}

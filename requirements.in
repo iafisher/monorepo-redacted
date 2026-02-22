@@ -1,0 +1,29 @@
+aiohttp == 3.11
+anki == 24.11
+anthropic == 0.79.0
+cryptography
+expecttest
+flask == 3.1.1
+google-api-python-client == 2.176.0
+google-genai == 1.52.0
+iafisher-foundation == 0.1.7
+litellm
+Markdown == 3.3
+openai == 2.8.1
+prompt_toolkit
+psycopg[binary] == 3.2.9
+pydantic-core
+Pygments
+pyyaml
+requests == 2.32.3
+tiktoken == 0.9.0
+twilio
+types-requests
+zulip
+
+# tooling
+black == 24.10.0
+flake8 == 7.1.1
+flake8-unused-arguments
+mypy == 1.14.1
+pyright == 1.1.407

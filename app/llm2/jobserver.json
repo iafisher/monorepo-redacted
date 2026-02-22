@@ -1,0 +1,30 @@
+{
+  "jobs": [
+    {
+      "name": "llm2::summarize_titles",
+      "cmd": ["llm2", "summarize-titles"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 5
+        }
+      },
+      "machines": ["homeserver"]
+    },
+    {
+      "name": "llm2::code-alone",
+      "cmd": [
+        "llm2",
+        "code-alone",
+        "check-for-requests",
+        "-code-dir",
+        "/home/iafisher/.ian/repos/master"
+      ],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 15
+        }
+      },
+      "machines": ["homeserver"]
+    }
+  ]
+}

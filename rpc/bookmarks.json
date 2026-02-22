@@ -1,0 +1,52 @@
+{
+  "types": [
+    {
+      "name": "Bookmark",
+      "fields": [
+        { "name": "bookmark_id", "type": "int" },
+        { "name": "source_id", "type": "string" },
+        { "name": "title", "type": "string" },
+        { "name": "url", "type": "string" },
+        { "name": "reading_time", "type": "string" },
+        { "name": "appeal", "type": "string" },
+        { "name": "source", "type": "string" },
+        { "name": "reason_archived", "type": "string" },
+        { "name": "tags", "type": "string[]" },
+        { "name": "time_created", "type": "datetime" },
+        { "name": "time_archived", "type": "datetime?" }
+      ]
+    },
+    {
+      "name": "LoadResponse",
+      "fields": [
+        { "name": "bookmarks", "type": "Bookmark[]" }
+      ]
+    },
+    {
+      "name": "UpdateRequest",
+      "fields": [
+        { "name": "bookmark_id", "type": "int" },
+        { "name": "title", "type": "string" },
+        { "name": "url", "type": "string" },
+        { "name": "reading_time", "type": "string" },
+        { "name": "appeal", "type": "string" },
+        { "name": "tags", "type": "string[]" }
+      ]
+    },
+    {
+      "name": "ArchiveRequest",
+      "fields": [
+        { "name": "bookmark_id", "type": "int" },
+        { "name": "reason", "type": "string" }
+      ]
+    },
+    {
+      "name": "UnarchiveRequest",
+      "fields": [
+        { "name": "bookmark_id", "type": "int" }
+      ]
+    }
+  ],
+  "python_file": "app/bookmarks/rpc.py",
+  "typescript_file": "frontend/bookmarks/rpc.ts"
+}

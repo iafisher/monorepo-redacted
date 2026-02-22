@@ -1,0 +1,24 @@
+{
+  "jobs": [
+    {
+      "name": "logrotate",
+      "cmd": ["logrotate", "-max-age-days", "14"],
+      "machines": ["laptop"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 60
+        }
+      }
+    },
+    {
+      "name": "logrotate",
+      "cmd": ["/home/iafisher/.ian/bin/logrotate", "-max-age-days", "14"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 60
+        }
+      }
+    }
+  ]
+}

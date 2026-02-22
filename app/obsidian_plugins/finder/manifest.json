@@ -1,0 +1,11 @@
+{
+  "id": "finder",
+  "name": "iafisher: Finder",
+  "version": "0.0.1",
+  "minAppVersion": "0.15.0",
+  "description": "Find content in notes",
+  "author": "Ian Fisher",
+  "authorUrl": "https://iafisher.com",
+  "isDesktopOnly": true,
+  "css": "styles.css"
+}

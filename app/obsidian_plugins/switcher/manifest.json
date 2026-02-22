@@ -1,0 +1,11 @@
+{
+  "id": "switcher",
+  "name": "iafisher: Switcher",
+  "version": "0.0.1",
+  "minAppVersion": "0.15.0",
+  "description": "Switch between notes",
+  "author": "Ian Fisher",
+  "authorUrl": "https://iafisher.com",
+  "isDesktopOnly": true,
+  "css": "styles.css"
+}

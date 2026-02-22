@@ -1,0 +1,14 @@
+{
+  "jobs": [
+    {
+      "name": "books::sync",
+      "cmd": ["books", "sync", "-write"],
+      "machines": ["laptop"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["3:45am"]
+        }
+      }
+    }
+  ]
+}

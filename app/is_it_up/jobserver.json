@@ -1,0 +1,31 @@
+{
+  "jobs": [
+    {
+      "name": "is-it-up::cityquiz",
+      "cmd": [
+        "is-it-up",
+        "https://cityquiz.io",
+        "-keyphrase",
+        "How many cities"
+      ],
+      "machines": ["homeserver"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 60
+        }
+      },
+      "alert_high_priority": true
+    },
+    {
+      "name": "is-it-up::iafisher",
+      "cmd": ["is-it-up", "https://iafisher.com", "-keyphrase", "Ian Fisher"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "hourly": {
+          "interval_mins": 60
+        }
+      },
+      "alert_high_priority": true
+    }
+  ]
+}
