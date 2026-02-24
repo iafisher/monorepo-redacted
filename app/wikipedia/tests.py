@@ -36,8 +36,28 @@ Usage: wikipedia SUBCMD
 
 Subcommands:
 
-  serve    . Run the webserver.
+  llmapedia
+  serve        . Run the webserver.
   tidy
+
+
+------------
+
+Usage: wikipedia llmapedia SUBCMD
+
+Subcommands:
+
+  export
+
+
+------------
+
+Usage: wikipedia llmapedia export ...
+
+Arguments:
+
+  -dest ARG
+  -vital-list ARG
 
 
 ------------

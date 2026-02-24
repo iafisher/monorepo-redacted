@@ -1,0 +1,154 @@
+@use "../common/common.scss" as common;
+
+@mixin page {
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+.jobs-table-container {
+    @include page;
+}
+
+.jobs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+
+    th {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 2px solid #ddd;
+        font-weight: bold;
+    }
+
+    td {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+
+    tr.disabled {
+        opacity: 0.5;
+
+        .job-name a {
+            color: #999;
+        }
+    }
+
+    .job-name a {
+        color: #0066cc;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .status-success {
+        color: #28a745;
+    }
+
+    .status-failure {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .status-none {
+        color: #999;
+    }
+
+    .enabled {
+        color: #dc3545;
+    }
+}
+
+.job-detail {
+    @include page;
+
+    h2 {
+        margin-top: 30px;
+        margin-bottom: 15px;
+    }
+
+    .config-table {
+        border-collapse: collapse;
+        font-family: monospace;
+
+        tr td:first-child {
+            font-weight: bold;
+            padding-right: 20px;
+            vertical-align: top;
+        }
+
+        td {
+            padding: 5px 0;
+        }
+    }
+
+    .runs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: monospace;
+        margin-top: 10px;
+
+        th {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        a {
+            color: #0066cc;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+
+        .status-success {
+            color: #28a745;
+        }
+
+        .status-failure {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .status-none {
+            color: #999;
+        }
+    }
+}
+
+.log-viewer {
+    @include page;
+
+    h2 {
+        margin-bottom: 15px;
+    }
+
+    .log-content {
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-family: monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+}
+
+.loading {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+}

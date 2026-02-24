@@ -248,6 +248,12 @@ def handle_child_exited(
         LOG.warning("job %s (pid=%s) exited with status %s", job_name, pid, status)
         now_concise = now.strftime("%Y-%m-%d %H:%M")
         machine = kgenv.get_machine()
+
+        log_link_row = ""
+        if machine == kgenv.MACHINE_HOMESERVER:
+            log_url = f"http://jobs/log/{job_name}/{pending_job.log_path.stem}"
+            log_link_row = f'\n<tr><td>Log link:</td><td><a href="{log_url}">{log_url}</a></td></tr>'
+
         try:
             emailalerts.send_alert(
                 title=f"job {job_name} failed at {now_concise} on {machine}",
@@ -259,6 +265,7 @@ def handle_child_exited(
                     logfile=pending_job.log_path.as_posix(),
                     logtail=tail_file(pending_job.log_path),
                     machine=machine,
+                    log_link_row=log_link_row,
                 ),
                 extra_css=email_templates.JOB_FAILED_EXTRA_CSS,
                 html=True,

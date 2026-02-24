@@ -1,6 +1,7 @@
 import time
 from typing import Annotated, NewType
 
+from app.wikipedia.common import USER_AGENT
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
 from lib import command, githelper, kgenv, kghttp, kgjson, llm, pdb, simplemail
@@ -206,9 +207,6 @@ beginning as you are already presented with the initial text of the article.
 
 
 ArticleTitle = NewType("ArticleTitle", str)
-
-
-USER_AGENT = "IafisherBot/0.0 (https://iafisher.com/; inbox@iafisher.com)"
 
 
 @dataclass

@@ -24,7 +24,7 @@ JOB_FAILED = """\
 <tr><td>Machine:</td><td>%(machine)s</td></tr>
 <tr><td>Exit status:</td><td>%(status)s</td></tr>
 <tr><td>Time:</td><td>%(time)s</td></tr>
-<tr><td>Log file:</td><td>%(logfile)s</td></tr>
+<tr><td>Log file:</td><td>%(logfile)s</td></tr>%(log_link_row)s
 </tbody>
 </table>
 

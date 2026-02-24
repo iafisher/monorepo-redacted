@@ -29,8 +29,16 @@ def type_name_to_python(type_name: str, known_types: Set[str]) -> str:
         return "str"
     elif type_name == "int":
         return "int"
+    elif type_name == "float":
+        return "float"
+    elif type_name == "date":
+        return "datetime.date"
     elif type_name == "datetime":
         return "datetime.datetime"
+    elif type_name == "boolean":
+        return "bool"
+    elif type_name == "dict":
+        return "Dict[str, Any]"
     elif type_name == "any":
         return "Any"
     elif type_name in known_types:
@@ -48,10 +56,16 @@ def type_name_to_typescript(type_name: str, known_types: Set[str]) -> str:
         return f"{inner_type} | null"
     elif type_name == "string":
         return "string"
-    elif type_name == "int":
+    elif type_name == "int" or type_name == "float":
         return "number"
+    elif type_name == "date":
+        return "string"
     elif type_name == "datetime":
         return "string"
+    elif type_name == "boolean":
+        return "boolean"
+    elif type_name == "dict":
+        return "object"
     elif type_name == "any":
         return "any"
     elif type_name in known_types:

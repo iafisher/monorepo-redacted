@@ -18,6 +18,7 @@ async function main(mode, outdir) {
     entryPoints: {
       "bookmarks/bookmarks": "./frontend/bookmarks/main.ts",
       "habits/habits": "./frontend/habits/main.ts",
+      "jobs/jobs": "./frontend/jobs/main.ts",
       "llmweb/llmweb": "./frontend/llmweb/main.ts",
       "wikitidy/extension": "./frontend/wikitidy/ui.ts",
       "wikitidy/codemirror": "./frontend/wikitidy/codemirror.ts",

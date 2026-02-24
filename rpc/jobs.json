@@ -1,0 +1,57 @@
+{
+  "types": [
+    {
+      "name": "JobListItem",
+      "fields": [
+        { "name": "name", "type": "string" },
+        { "name": "enabled", "type": "boolean" },
+        { "name": "last_run_time", "type": "datetime?" },
+        { "name": "next_scheduled_time", "type": "datetime?" },
+        { "name": "last_exit_status", "type": "int?" },
+        { "name": "last_wall_time_secs", "type": "float?" }
+      ]
+    },
+    {
+      "name": "JobListResponse",
+      "fields": [{ "name": "jobs", "type": "JobListItem[]" }]
+    },
+    {
+      "name": "JobRunItem",
+      "fields": [
+        { "name": "time_run", "type": "datetime" },
+        { "name": "exit_status", "type": "int?" },
+        { "name": "wall_time_secs", "type": "float?" },
+        { "name": "user_time_secs", "type": "float?" },
+        { "name": "system_time_secs", "type": "float?" },
+        { "name": "max_memory", "type": "int?" },
+        { "name": "log_available", "type": "boolean" },
+        { "name": "log_timestamp", "type": "string" }
+      ]
+    },
+    {
+      "name": "JobDetailResponse",
+      "fields": [
+        { "name": "name", "type": "string" },
+        { "name": "cmd", "type": "string[]" },
+        { "name": "enabled", "type": "boolean" },
+        { "name": "schedule", "type": "string?" },
+        { "name": "date_added", "type": "date" },
+        { "name": "last_run_time", "type": "datetime?" },
+        { "name": "next_scheduled_time", "type": "datetime?" },
+        { "name": "last_exit_status", "type": "int?" },
+        { "name": "last_stats", "type": "dict?" },
+        { "name": "extra_path", "type": "string[]?" },
+        { "name": "extra_pythonpath", "type": "string[]?" },
+        { "name": "working_directory", "type": "string?" },
+        { "name": "alert_high_priority", "type": "boolean" },
+        { "name": "runs", "type": "JobRunItem[]" }
+      ]
+    },
+    {
+      "name": "LogDetailResponse",
+      "fields": [{ "name": "content", "type": "string" }]
+    }
+  ],
+  "python_file": "app/jobserver/rpc_web.py",
+  "typescript_file": "frontend/jobs/rpc.ts"
+}

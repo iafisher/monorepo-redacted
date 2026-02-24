@@ -8,10 +8,8 @@ from iafisher_foundation import colors, tabular, timehelper
 from iafisher_foundation.prelude import *
 from lib import command, fzf, humanunits, iterhelper, kgenv, localdb, oshelper
 
-from . import models, rpc, server
+from . import models, rpc, server, webserver
 from .scheduler import Schedule
-
-# TODO(2025-01): `kg jobs history` command
 
 
 def main_daemon_kill(
@@ -500,3 +498,4 @@ cmd.add2("remove", main_remove, help="Remove a job from the schedule.")
 cmd.add2("run", main_run, help="Manually run a job out of schedule.")
 cmd.add2("schedule", main_schedule, help="Schedule a background job to run.")
 cmd.add2("show", main_show, help="Show details about a job.")
+cmd.add("webserver", webserver.cmd)

@@ -262,3 +262,15 @@ class Schedule(kgjson.Base):
             )
 
         return non_null_fields[0]
+
+    def get_type(self) -> str:
+        if self.hourly is not None:
+            return "hourly"
+        if self.daily is not None:
+            return "daily"
+        if self.weekly is not None:
+            return "weekly"
+        if self.monthly is not None:
+            return "monthly"
+
+        impossible()

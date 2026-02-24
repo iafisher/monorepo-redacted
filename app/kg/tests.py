@@ -51,6 +51,7 @@ Subcommands:
   run          . Manually run a job out of schedule.
   schedule     . Schedule a background job to run.
   show         . Show details about a job.
+  webserver    . Run the webserver.
 
 
 ------------
@@ -234,6 +235,19 @@ Usage: kg jobs show ...
 Arguments:
 
   name
+
+
+------------
+
+Usage: kg jobs webserver ...
+
+  Run the webserver.
+
+Arguments:
+
+ [-debug]       . Run the server in debug mode.
+ [-port ARG]    . (default: 7900)
+ [-testdb]      . Run against the test database.
 
 
 ------------
