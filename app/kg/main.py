@@ -13,9 +13,10 @@ from iafisher_foundation.prelude import *
 
 
 def main_check_heartbeat(
+    *,
     max_age: Annotated[
         datetime.timedelta, command.Extra(converter=humanunits.parse_duration)
-    ]
+    ],
 ) -> None:
     max_age_secs = max_age.total_seconds()
     heartbeat_dirpath = kgenv.get_ian_dir() / "logs" / "heartbeat"

@@ -62,7 +62,7 @@ Usage: bookmarks import hn ...
 Arguments:
 
  [-comment-limit ARG]    . limit the number of comments to query per story (default: 10)
- [-model ARG]            . LLM model to use (options: 'any', 'any_fast', 'any_slow', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2', 'gpt-5.2-codex', 'gpt-mock-web-search', 'claude-haiku-4-5', 'claude-opus-4-5', 'claude-opus-4-6', 'claude-sonnet-4-5', 'claude-sonnet-4-6', 'claude-mock-local-tool-use', 'claude-mock-web-search', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview', 'gemini-mock-web-search') (default: 'any_fast')
+ [-model ARG]            . LLM model to use (options: 'any', 'any_fast', 'any_slow', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2', 'gpt-5.2-codex', 'gpt-mock-web-search', 'claude-haiku-4-5', 'claude-opus-4-5', 'claude-opus-4-6', 'claude-sonnet-4-5', 'claude-sonnet-4-6', 'claude-mock-local-tool-use', 'claude-mock-web-search', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview', 'gemini-mock-web-search', 'mercury-2') (default: 'any_fast')
  [-story-limit ARG]      . limit the number of stories to query (default: 20)
 
 

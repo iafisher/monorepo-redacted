@@ -447,6 +447,10 @@ def _send_prompt(
         colors.error(f"Error: failed to prompt LLM (model: {state.model_name()})")
     else:
         print()
-        tokens_used = state.conversation_or_model.count_tokens()
         token_limit = llm.get_token_limit(state.model_name())
-        colors.print(colors.gray(f"Tokens: {tokens_used:,} / {token_limit:,}"))
+        try:
+            tokens_used = state.conversation_or_model.count_tokens()
+        except Exception:
+            colors.print(colors.gray(f"Tokens: unknown / {token_limit:,}"))
+        else:
+            colors.print(colors.gray(f"Tokens: {tokens_used:,} / {token_limit:,}"))

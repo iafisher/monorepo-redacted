@@ -5,6 +5,7 @@ from .base import APIWrapper
 from .claude import Claude
 from .gemini import Gemini
 from .gpt import GPT
+from .mercury import Mercury
 from .model_names import *
 
 
@@ -259,6 +260,20 @@ MODEL_TO_INFO = {
         token_limit=1_048_576,
         nicknames=[],
         is_mock=True,
+    ),
+    # https://docs.inceptionlabs.ai/get-started/models
+    MERCURY_2: ModelInfo(
+        Mercury,
+        family=MODEL_FAMILY_MERCURY,
+        token_limit=128_000,
+        nicknames=["mercury"],
+        token_cost=TokenCost(
+            per_1m_input_tokens=Decimal("0.25"),
+            per_1m_output_tokens=Decimal("0.75"),
+            per_1m_reasoning_tokens=None,
+            per_1m_cache_read_tokens=Decimal("0.025"),
+            per_1m_cache_creation_tokens=None,
+        ),
     ),
 }
 

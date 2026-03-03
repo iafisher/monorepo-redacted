@@ -131,6 +131,7 @@ Your job is to copy-edit English Wikipedia articles. Make these corrections:
 - Replace the slash character when used to indicate conjunction, or "per" for a unit of measurement.
     - FIX: "the late 1960s/early 1970s" --> "the late 1960s and early 1970s" or "the late 1960s or early 1970s" depending on context
     - FIX: "meter/second" --> "meter per second" (though abbreviated "m/s" is OK)
+    - Exception: Leave slash for month names in citations, e.g., "March/April".
 - Add comma separators to large numbers.
     - FIX: "1000 people" --> "1,000 people"
 - Italicize the names of books and films.
@@ -200,9 +201,14 @@ the article.
 Do not make any formatting changes that have no visible effect.
 
 - For instance, do not change "==Section header==" to "== Section header ==" or vice versa.
+- Do not change "{{spaced ndash}}" to an en-dash character.
 
 Use your tools to make edits to the article. Don't call `{GetArticleTool.get_name()}` at the
 beginning as you are already presented with the initial text of the article.
+
+You are invoked non-interactively. Do not ask questions or pause for user input. If you have a
+limit to the number of tools you can call in a single turn, make all corrections in as many turns
+as needed.
 """
 
 
@@ -230,41 +236,18 @@ def main_nightly(
     vital_level_3: Annotated[
         bool, command.Extra(help="fetch a random level 3 vital article", mutex=_mutex)
     ],
+    article: Annotated[
+        Optional[str], command.Extra(help="copy-edit this article", mutex=_mutex)
+    ],
 ) -> None:
     app_dir = kgenv.get_app_dir("wikipedia")
     app_dir.mkdir(parents=True, exist_ok=True)
     with NightlyState.with_lock(app_dir / "state.json") as state_lock:
         state = state_lock.read()
-        now = timehelper.now()
-        while True:
-            if vital_level_3:
-                url = "https://randomincategory.toolforge.org/?category=A-Class%20level-3%20vital%20articles&category2=B-Class%20level-3%20vital%20articles&category3=C-Class%20level-3%20vital%20articles&category4=FA-Class%20level-3%20vital%20articles&category5=FL-Class%20level-3%20vital%20articles&category6=GA-Class%20level-3%20vital%20articles&category7=List-Class%20level-3%20vital%20articles&category8=Start-Class%20level-3%20vital%20articles&category9=Stub-Class%20level-3%20vital%20articles&server=en.wikipedia.org&cmnamespace=&cmtype=&returntype=subject"
-            else:
-                url = (
-                    f"https://en.wikipedia.org/wiki/Special:RandomInCategory/{category}"
-                )
-
-            response = kghttp.get(
-                url, headers={"User-Agent": USER_AGENT}, allow_redirects=False
+        if article is None:
+            article = _select_random_article(
+                state, category=category, vital_level_3=vital_level_3
             )
-            if response.next is None or response.next.url is None:
-                raise KgError("expected redirect", url=url)
-
-            article = response.next.url.rsplit("/", maxsplit=1)[1]
-            if article not in state.last_edited:
-                break
-            else:
-                time_elapsed = now - state.last_edited[article]
-                if time_elapsed.days < DO_NOT_EDIT_WITHIN_THIS_NUMBER_OF_DAYS:
-                    LOG.info(
-                        "skipping %r, last edited %s (%s day(s) ago)",
-                        article,
-                        state.last_edited[article],
-                        time_elapsed.days,
-                    )
-                    time.sleep(5)
-                else:
-                    break
 
         LOG.info("selected random article category %r: %r", category, article)
         article = _normalize_title(article)
@@ -282,11 +265,11 @@ def main_nightly(
         outfile.parent.mkdir(parents=True, exist_ok=True)
         outfile.write_text(edited_text)
         LOG.info("wrote article text to %s", outfile)
-        state.last_edited[article] = now
+        state.last_edited[article] = timehelper.now()
 
         simplemail.send_email(
             f"wikitidy: edits proposed for {article}",
-            make_email(
+            _make_email(
                 conversation_id=response.conversation_id,
                 outfile=outfile.as_posix(),
                 article=article,
@@ -298,7 +281,40 @@ def main_nightly(
         )
 
 
-def make_email(
+def _select_random_article(
+    state: NightlyState, *, category: Optional[str], vital_level_3: bool
+) -> str:
+    now = timehelper.now()
+    while True:
+        if vital_level_3:
+            url = "https://randomincategory.toolforge.org/?category=A-Class%20level-3%20vital%20articles&category2=B-Class%20level-3%20vital%20articles&category3=C-Class%20level-3%20vital%20articles&category4=FA-Class%20level-3%20vital%20articles&category5=FL-Class%20level-3%20vital%20articles&category6=GA-Class%20level-3%20vital%20articles&category7=List-Class%20level-3%20vital%20articles&category8=Start-Class%20level-3%20vital%20articles&category9=Stub-Class%20level-3%20vital%20articles&server=en.wikipedia.org&cmnamespace=&cmtype=&returntype=subject"
+        else:
+            url = f"https://en.wikipedia.org/wiki/Special:RandomInCategory/{category}"
+
+        response = kghttp.get(
+            url, headers={"User-Agent": USER_AGENT}, allow_redirects=False
+        )
+        if response.next is None or response.next.url is None:
+            raise KgError("expected redirect", url=url)
+
+        article = response.next.url.rsplit("/", maxsplit=1)[1]
+        if article not in state.last_edited:
+            return article
+        else:
+            time_elapsed = now - state.last_edited[article]
+            if time_elapsed.days < DO_NOT_EDIT_WITHIN_THIS_NUMBER_OF_DAYS:
+                LOG.info(
+                    "skipping %r, last edited %s (%s day(s) ago)",
+                    article,
+                    state.last_edited[article],
+                    time_elapsed.days,
+                )
+                time.sleep(5)
+            else:
+                return article
+
+
+def _make_email(
     *, conversation_id: int, outfile: str, article: str, revision: int, html_diff: str
 ) -> str:
     return f"""\

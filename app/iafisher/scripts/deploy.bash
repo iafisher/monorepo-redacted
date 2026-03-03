@@ -25,7 +25,11 @@ tar -xzf "$archive_filepath" -C "$archive_dir/code"
 rm "$archive_filepath"
 
 echo "==> installing python dependencies"
+# temporarily disable `set -x` so the shell doesn't print the individual lines of `env-for-sourcing`
+# which include secrets
+set +x
 source /var/iafisher/env-for-sourcing
+set -x
 cd "$archive_dir/code"
 python3.11 -m venv .venv
 source .venv/bin/activate

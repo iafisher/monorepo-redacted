@@ -1,5 +1,6 @@
 import contextlib
 import enum
+import re
 from abc import ABC, abstractmethod
 
 import yaml
@@ -45,6 +46,13 @@ class Vault:
         globpath = self._path if subpath is None else self._path / pathlib.Path(subpath)
         for p in globpath.glob(pat):
             yield self._path / p
+
+    def glob_regex(
+        self, pat: re.Pattern[str], *, subpath: Optional[PathLike] = None
+    ) -> Generator[pathlib.Path, None, None]:
+        for p in self.markdown_files(subpath=subpath):
+            if pat.match(p.name):
+                yield p
 
     def markdown_files(
         self, *, subpath: Optional[PathLike] = None

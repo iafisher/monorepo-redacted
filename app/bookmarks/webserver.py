@@ -7,7 +7,7 @@ from lib import dblog, pdb, webserver
 
 
 app = webserver.make_app("bookmarks", file=__file__)
-TEMPLATE = webserver.make_template(title="Bookmarks", static_file_name="bookmarks")
+TEMPLATE = webserver.make_template(title="kg: bookmarks", static_file_name="bookmarks")
 
 
 T = models.Bookmark.T

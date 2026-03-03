@@ -89,6 +89,7 @@ Usage: wikipedia tidy nightly ...
 
 Arguments:
 
+ [-article ARG]      . copy-edit this article
  [-category ARG]     . fetch a random article in this category
  [-model ARG]        . (default: 'gpt-5.2')
  [-vital-level-3]    . fetch a random level 3 vital article

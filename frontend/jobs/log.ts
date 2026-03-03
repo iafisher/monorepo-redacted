@@ -4,6 +4,17 @@ import Controller from "../common/controller";
 import HeaderView from "../common/header";
 import * as api from "./api";
 
+class LogContentView {
+  view(vnode: m.Vnode<{ content: string }>) {
+    const { content } = vnode.attrs;
+    if (content === "") {
+      return m("p.empty-log-content", "The log file is empty.");
+    } else {
+      return m("pre.log-content", content);
+    }
+  }
+}
+
 class LogPage {
   private jobName: string;
   private timestamp: string;
@@ -57,7 +68,10 @@ class LogPage {
           { text: "home", href: "/" },
         ],
       }),
-      m(".log-viewer", [m("h2", title), m("pre.log-content", this.logContent)]),
+      m(".log-viewer", [
+        m("h2", title),
+        m(LogContentView, { content: this.logContent }),
+      ]),
     ]);
   }
 }

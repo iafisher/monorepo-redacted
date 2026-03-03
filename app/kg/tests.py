@@ -30,7 +30,7 @@ Usage: kg check-heartbeat ...
 
 Arguments:
 
-  max_age
+  -max-age ARG
 
 
 ------------

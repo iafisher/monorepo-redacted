@@ -11,7 +11,7 @@ from flask import jsonify, render_template_string, request
 app = webserver.make_app("habits", file=__file__)
 
 
-TEMPLATE = webserver.make_template(title="Habits", static_file_name="habits")
+TEMPLATE = webserver.make_template(title="kg: habits", static_file_name="habits")
 
 
 @app.route("/")

@@ -105,37 +105,37 @@ class JobDetailPage {
               m("td", "Schedule:"),
               m("td", this.job.schedule || "none"),
             ]),
-            m("tr", [m("td", "Date Added:"), m("td", this.job.dateAdded)]),
+            m("tr", [m("td", "Date added:"), m("td", this.job.dateAdded)]),
             m("tr", [
-              m("td", "Last Run:"),
+              m("td", "Last run:"),
               m("td", formatDateTime(this.job.lastRunTime)),
             ]),
             m("tr", [
-              m("td", "Next Run:"),
+              m("td", "Next run:"),
               m("td", formatDateTime(this.job.nextScheduledTime)),
             ]),
             this.job.workingDirectory
               ? m("tr", [
-                  m("td", "Working Directory:"),
+                  m("td", "Working directory:"),
                   m("td", this.job.workingDirectory),
                 ])
               : null,
             this.job.alertHighPriority
-              ? m("tr", [m("td", "Alert Priority:"), m("td", "high")])
+              ? m("tr", [m("td", "Alert priority:"), m("td", "high")])
               : null,
           ]),
         ]),
         m(".job-runs", [
-          m("h2", "Recent Runs"),
+          m("h2", "Recent runs"),
           m("table.runs-table", [
             m("thead", [
               m("tr", [
                 m("th", "Time"),
-                m("th", "Exit Status"),
-                m("th", "Wall Time"),
-                m("th", "User Time"),
-                m("th", "System Time"),
-                m("th", "Max Memory"),
+                m("th", "Exit status"),
+                m("th", "Wall time"),
+                m("th", "User time"),
+                m("th", "System time"),
+                m("th", "Max memory"),
                 m("th", "Log"),
               ]),
             ]),

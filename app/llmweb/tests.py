@@ -17,7 +17,7 @@ Usage: llmweb ...
 Arguments:
 
  [-debug]       . Run the server in debug mode.
- [-port ARG]    . (default: 5000)
+ [-port ARG]    . (default: 7600)
  [-testdb]      . Run against the test database.
 """,
         )

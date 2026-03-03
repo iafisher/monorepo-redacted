@@ -141,6 +141,16 @@ class BaseTool(ABC):
             # parameters. (Other providers allow this.)
         )
 
+    def to_mercury_param(self) -> StrDict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.get_name(),
+                "description": self.get_plain_description(),
+                "parameters": self.get_input_schema(),
+            },
+        }
+
 
 class ToolError(Exception):
     """
@@ -220,7 +230,9 @@ class ModelResponse:
 class ModelResponseError(KgError):
     raw_request_json: str
 
-    def __init__(self, *, raw_request_json: str, original_exception: Exception) -> None:
+    def __init__(
+        self, *, raw_request_json: str, original_exception: Union[Exception, str]
+    ) -> None:
         self.raw_request_json = raw_request_json
         super().__init__(
             "The model API returned an error.", message=str(original_exception)

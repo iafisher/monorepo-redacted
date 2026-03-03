@@ -99,8 +99,8 @@ class IndexPage {
           m("thead", [
             m("tr", [
               m("th", "Job"),
-              m("th", "Next Run"),
-              m("th", "Last Run"),
+              m("th", "Next run"),
+              m("th", "Last run"),
               m("th", "Status"),
               m("th", "Time"),
               m("th", ""),

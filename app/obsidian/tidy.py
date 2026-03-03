@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from iafisher_foundation import colors, timehelper
 from iafisher_foundation.prelude import *
-from lib import command, obsidian
+from lib import command, githelper, obsidian
 
 
 def main(*, write: bool = False) -> None:
@@ -21,8 +21,6 @@ def main(*, write: bool = False) -> None:
     with maybe_lock:
         with timehelper.print_time("sync_topics"):
             sync_topics(dry_run=dry_run)
-        with timehelper.print_time("sync_dated_pages"):
-            sync_dated_pages(dry_run=dry_run)
 
 
 def sync_topics(*, dry_run: bool) -> None:
@@ -48,9 +46,8 @@ def sync_topics(*, dry_run: bool) -> None:
 
             topic_to_path_and_subheader_list_map[m.group(1)].append((path, ""))
 
-    # Parse topics from subheaders inside, e.g., "2026-thoughts.md".
-    thought_pattern = re.compile(r"##(.+)\nTopics: (.+)")
-    for path in thought_files(vault):
+    thought_pattern = re.compile(r"###?(.+)\nTopics: (.+)")
+    for path in files_with_topic_subheaders(vault):
         for full_match in thought_pattern.finditer(path.read_text()):
             subheader = full_match.group(1).strip()
             topics_str = full_match.group(2).strip().split(", ")
@@ -70,167 +67,15 @@ def sync_topics(*, dry_run: bool) -> None:
         update_topic(topic, path_and_subheader_list, dry_run=dry_run)
 
 
-def thought_files(vault: obsidian.Vault) -> Generator[pathlib.Path, None, None]:
+def files_with_topic_subheaders(
+    vault: obsidian.Vault,
+) -> Generator[pathlib.Path, None, None]:
     yield from vault.glob("*-thoughts.md")
+    for p in vault.glob_regex(re.compile(r"^[0-9]{4}-[0-9]{2}\.md$")):
+        if p.stem >= "2026-03":
+            yield p
 
 
-def sync_dated_pages(*, dry_run: bool) -> None:
-    dated_page_to_path_list_map: Dict[str, List[pathlib.Path]] = defaultdict(list)
-    vault = obsidian.Vault.main()
-    for path in vault.markdown_files():
-        try:
-            date, _ = obsidian.split_dated_title(path.stem)
-        except KgError:
-            continue
-
-        if date < datetime.date(2025, 7, 1):
-            continue
-
-        dated_page_to_path_list_map[obsidian.format_month(date)].append(path)
-
-    for dated_page, path_list in dated_page_to_path_list_map.items():
-        update_dated_page(dated_page, path_list, dry_run=dry_run)
-
-
-def update_dated_page(
-    dated_page: str, path_list: List[pathlib.Path], *, dry_run: bool
-) -> None:
-    vault = obsidian.Vault.main()
-    try:
-        dated_page_path = vault.find_note_only_one(dated_page)
-    except KgError:
-        dt = datetime.date.fromisoformat(dated_page + "-01")
-        if dt >= datetime.date.today():
-            print(f"==> skipping non-existent future page: {dated_page}")
-            return
-        else:
-            raise
-
-    document = obsidian.Document.from_path(dated_page_path)
-
-    out: List[str] = []
-    for section in document.sections():
-        if section.title() == "Links":
-            out.append(format_links(section, path_list=path_list))
-        else:
-            out.append(section.content())
-
-    new_contents = "".join(out)
-    print(f"==> updating {dated_page_path}")
-    if dry_run:
-        print(new_contents)
-    else:
-        dated_page_path.write_text(new_contents)
-
-
-dated_page_line_pattern = lazy_re(
-    r"""
-    # the initial dash and any leading text
-    -
-    (?P<before>[^\[]*)
-    # the start of the link ('[[')
-    \[\[
-    # the target of the link
-    (?P<link>[^|\]]+)
-    # optionally, the text of the link, after a pipe
-    (?:
-      \|
-      (?P<linktext>[^|\]]+)
-    )?
-    # the end of the link (']]')
-    \]\]
-    """,
-    re.VERBOSE,
-)
-
-
-def format_links(section: obsidian.Section, path_list: List[pathlib.Path]) -> str:
-    links_to_add = set(p.stem for p in path_list)
-
-    out: List[str] = []
-    for line in section.content().splitlines(keepends=True):
-        if line.isspace():
-            continue
-
-        formatted_line, link = maybe_format_line(line)
-        if link is not None:
-            links_to_add.discard(link)
-        out.append(formatted_line)
-
-    vault = obsidian.Vault.main()
-    for link in sorted(links_to_add):
-        found_paths = vault.find_note(link)
-        if len(found_paths) != 1:
-            continue
-
-        # TODO(2025-12): cache `obsidian.Document` calls
-        document = obsidian.Document.from_path(found_paths[0])
-        linktext = document.title() or link
-        word_count = document.word_count()
-        out.append(
-            format_from_properties(
-                before=" ", link=link, linktext=linktext, word_count=word_count
-            )
-        )
-
-    out.append("\n")
-    contents = "".join(out)
-    return contents
-
-
-def maybe_format_line(line: str) -> Tuple[str, Optional[str]]:
-    """
-    Returns (formatted_line, link).
-
-    If unable to format, returns (line, None).
-    """
-    vault = obsidian.Vault.main()
-    m = dated_page_line_pattern.get().search(line)
-    if m is not None:
-        before = m.group("before")
-        link = m.group("link")
-        linktext = m.group("linktext")
-
-        found_paths = vault.find_note(link)
-        if len(found_paths) != 1:
-            return line, None
-
-        document = obsidian.Document.from_path(found_paths[0])
-        if linktext is None:
-            linktext = document.title()
-
-        if linktext is None:
-            linktext = link
-
-        word_count = document.word_count()
-        return (
-            format_from_properties(
-                before=before, link=link, linktext=linktext, word_count=word_count
-            ),
-            link,
-        )
-    else:
-        return line, None
-
-
-def format_from_properties(
-    *, before: str, link: str, linktext: str, word_count: int
-) -> str:
-    return f"-{before}[[{link}|{linktext}]] ({pluralize(word_count, 'word')})\n"
-
-
-month_prefix_pattern = lazy_re(r"^[0-9]{4}-[0-9]{2}(-[0-9]{2})? ")
-
-
-def strip_month_prefix(title: str) -> str:
-    m = month_prefix_pattern.get().match(title)
-    if m:
-        return title[m.end() :]
-    else:
-        return title
-
-
-# TODO(2025-07): DRY `journal_links.py`
 topic_line_pattern = lazy_re(
     r"""
     # the initial dash and any leading text
@@ -371,9 +216,9 @@ class TopicPage:
             if updated:
                 return
 
-        if (
-            len(self.section_list) == 0
-            or self.section_list[0].section_title is not None
+        if len(self.section_list) == 0 or (
+            self.section_list[0].section_title is not None
+            and self.section_list[0].section_title != ""
         ):
             self.section_list.insert(
                 0, TopicPageSection(section_title=None, topic_link_list=[])
@@ -430,9 +275,11 @@ def update_topic(
 ) -> None:
     topic_path = obsidian.Vault.main().path() / "topics" / (topic + ".md")
     if not topic_path.exists():
+        original_contents = ""
         topic_page = TopicPage(section_list=[])
     else:
-        topic_page = TopicPage.from_string(topic_path.read_text())
+        original_contents = topic_path.read_text()
+        topic_page = TopicPage.from_string(original_contents)
 
     for path, subheader in path_and_subheader_list:
         metadata = read_article_metadata(path, subheader)
@@ -452,9 +299,12 @@ def update_topic(
         topic_page.add_or_update_link(topic_link)
 
     new_contents = str(topic_page)
+    if original_contents == new_contents:
+        return
+
     print(f"==> updating {topic_path}")
     if dry_run:
-        print(new_contents)
+        print(githelper.make_ansi_diff(original_contents, new_contents))
     else:
         topic_path.write_text(new_contents)
 

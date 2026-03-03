@@ -145,6 +145,11 @@
         white-space: pre-wrap;
         word-wrap: break-word;
     }
+
+    .empty-log-content {
+        font-style: italic;
+        text-align: center;
+    }
 }
 
 .loading {

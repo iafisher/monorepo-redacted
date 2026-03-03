@@ -16,7 +16,7 @@ class HistoryItemView {
       },
       [
         m(".conversation-title", [
-          m("span", conv.title || "Untitled conversation"),
+          m("span.title", conv.title || "Untitled conversation"),
           m(
             "span.message-count",
             `${conv.messageCount} message${conv.messageCount === 1 ? "" : "s"}`,

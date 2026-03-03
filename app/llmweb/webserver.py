@@ -23,7 +23,7 @@ from lib import kgjson, llm, pdb, webserver
 app = webserver.make_app("llmweb", file=__file__)
 
 
-TEMPLATE = webserver.make_template(title="LLM chat", static_file_name="llmweb")
+TEMPLATE = webserver.make_template(title="kg: llm", static_file_name="llmweb")
 
 
 SYSTEM_PROMPT = f"""\
@@ -573,4 +573,4 @@ command_defs = [
 ]
 
 
-cmd = webserver.make_command(app)
+cmd = webserver.make_command(app, default_port=7600)
