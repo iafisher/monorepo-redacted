@@ -119,7 +119,6 @@ def set_up_with_lock() -> EphemeralState:
     signal_pipe = SignalPipe()
 
     def sighandler(signum: int, _frame: Any):
-        LOG.info("debug: sighandler: %s", signum)
         signal_pipe.write_signal(signum)
 
     signal.signal(signal.SIGCHLD, sighandler)
@@ -143,7 +142,6 @@ class SignalPipe:
 
     def write_signal(self, signum: int) -> None:
         time_epoch_secs = time.time()
-        LOG.info("debug: write_signal: %s (%s)", signum, time_epoch_secs)
         os.write(self._write, bytes([signum]) + struct.pack("d", time_epoch_secs))
 
     def read_signal_and_time(self) -> Optional[Tuple[int, float]]:
@@ -151,21 +149,15 @@ class SignalPipe:
             payload = os.read(self._read, 9)
             signum = payload[0]
             time_epoch_secs = struct.unpack("d", payload[1:])[0]
-            LOG.info("debug: read_signal: %s (%s)", signum, time_epoch_secs)
             return signum, time_epoch_secs
         except BlockingIOError:
             return None
 
 
 def wake_up_and_do_one(ephemeral_state: EphemeralState) -> None:
-    signals_masked = signal.pthread_sigmask(signal.SIG_BLOCK, [])
-    if len(signals_masked) > 0:
-        LOG.info("debug: signals masked: %r", signals_masked)
-
     signal_and_time = ephemeral_state.signal_pipe.read_signal_and_time()
     if signal_and_time is not None:
         signum, signal_time_epoch_secs = signal_and_time
-        LOG.info("debug: signal received: %s", signum)
         handle_signal_received(ephemeral_state, signum, signal_time_epoch_secs)
 
     with oshelper.LockFile(state_lock_file_path(), exclusive=True):
@@ -222,6 +214,9 @@ def handle_signal_received(
             try:
                 pid, status, rusage = os.wait4(-1, os.WNOHANG)
             except ChildProcessError:
+                return
+
+            if pid == 0:
                 return
 
             child_result = ChildResult(
@@ -297,12 +292,6 @@ def handle_child_exited(
     wall_time_secs = (
         child_result.end_time_epoch_secs - pending_job.start_time_epoch_secs
     )
-    LOG.info(
-        "debug: wall_time_secs = %.1f = %s - %s",
-        wall_time_secs,
-        child_result.end_time_epoch_secs,
-        pending_job.start_time_epoch_secs,
-    )
     user_time_secs = child_result.rusage.ru_utime
     system_time_secs = child_result.rusage.ru_stime
     max_memory = child_result.rusage.ru_maxrss
@@ -322,6 +311,7 @@ def handle_child_exited(
         else:
             LOG.error("unknown job %s in SIGCHLD handler", job_name)
 
+    LOG.info("debug: writing to database %s (pid=%s)", job_name, pid)
     with localdb.connect() as db:
         T = models.JobRun.T
         db.execute(
