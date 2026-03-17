@@ -72,6 +72,10 @@ class EditArticleTool(llm.BaseTool):
         self.article.edit(full_text.replace(old_text, new_text))
 
 
+# TODO(2026-02): Replace `GetArticleTool` with token-efficient `SearchArticleTool` that only
+# returns a few lines at a time.
+
+
 class GetArticleTool(llm.BaseTool):
     @classmethod
     @override
@@ -102,6 +106,37 @@ class GetArticleTool(llm.BaseTool):
     @override
     def call(self, params: Any) -> Any:
         return self.article.get()
+
+
+class SubmitArticleTool(llm.BaseTool):
+    is_finished: bool
+
+    @classmethod
+    @override
+    def get_name(cls) -> str:
+        return "submit_article"
+
+    @classmethod
+    @override
+    def get_plain_description(cls) -> str:
+        return "Call this tool to submit the finished article once all edits have been made."
+
+    @classmethod
+    @override
+    def get_input_schema(cls) -> StrDict:
+        return dict(type="object", properties={})
+
+    @classmethod
+    @override
+    def get_output_schema(cls) -> StrDict:
+        return {}
+
+    def __init__(self) -> None:
+        self.is_finished = False
+
+    @override
+    def call(self, _params: Any) -> Any:
+        self.is_finished = True
 
 
 SYSTEM_PROMPT = f"""\
@@ -145,8 +180,6 @@ Your job is to copy-edit English Wikipedia articles. Make these corrections:
     - FIX: "text ." → "text."
     - FIX: "text ," → "text,"
     - FIX: "text ;" → "text;"
-- Remove multiple consecutive spaces.
-    - FIX: "text  more" → "text more"
 - Correct any misspelled words.
 - Use a non-breaking space to separate a figure from its unit of measurement.
     - FIX: "5m in length" --> "5&nbsp;m in length"
@@ -208,7 +241,7 @@ beginning as you are already presented with the initial text of the article.
 
 You are invoked non-interactively. Do not ask questions or pause for user input. If you have a
 limit to the number of tools you can call in a single turn, make all corrections in as many turns
-as needed.
+as needed. Call the `{SubmitArticleTool.get_name()}` tool when finished with all edits.
 """
 
 
@@ -409,21 +442,45 @@ def print_diff(wikitext: str, edited_text: str) -> None:
 
 
 def tidy(
-    text: str, *, model: str = llm.CLAUDE_HAIKU_4_5
+    text: str, *, model: str = llm.CLAUDE_HAIKU_4_5, max_turn_count: int = 10
 ) -> Tuple[str, llm.ModelResponse]:
-    with pdb.connect() as db:
-        editable_article = EditableArticle(text)
-        response = llm.oneshot(
-            db,
-            text,
-            model=model,
-            hooks=llm.LoggingHooks(),
-            tools=[EditArticleTool(editable_article), GetArticleTool(editable_article)],
-            system_prompt=SYSTEM_PROMPT,
-            app_name="wikipedia::copyedit",
-            options=llm.InferenceOptions.normal(),
+    with pdb.connect(transaction_mode=pdb.TransactionMode.AUTOCOMMIT) as db:
+        conversation = llm.Conversation.start(
+            db, model=model, app_name="wikipedia::copyedit", system_prompt=SYSTEM_PROMPT
         )
-        LOG.info("LLM conversation ID: %s", response.conversation_id)
+        LOG.info("LLM conversation ID: %s", conversation.conversation_id)
+
+        submit_article_tool = SubmitArticleTool()
+        editable_article = EditableArticle(text)
+        tools: List[llm.BaseTool] = [
+            EditArticleTool(editable_article),
+            GetArticleTool(editable_article),
+            submit_article_tool,
+        ]
+        hooks = llm.LoggingHooks()
+        options = llm.InferenceOptions.normal()
+        response = conversation.prompt(
+            db, text, hooks=hooks, tools=tools, options=options
+        )
+
+        turn_count = 1
+        while not submit_article_tool.is_finished and turn_count < max_turn_count:
+            LOG.info("reprompting the model")
+            conversation.prompt(
+                db,
+                "Continue applying edits until done, "
+                f"then call your `{submit_article_tool.get_name()}` tool.",
+                hooks=hooks,
+                tools=tools,
+                options=options,
+            )
+            turn_count += 1
+
+        if not submit_article_tool.is_finished:
+            LOG.warning(
+                "ran out of turns without calling `%s`", submit_article_tool.get_name()
+            )
+
         return editable_article.get(), response
 
 

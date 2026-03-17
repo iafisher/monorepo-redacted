@@ -1,0 +1,24 @@
+{
+  "jobs": [
+    {
+      "name": "tasks::backlog_until",
+      "cmd": ["tasks", "jobs", "reopen-if-backlog-until-past"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["4am"]
+        }
+      }
+    },
+    {
+      "name": "tasks::due_soon",
+      "cmd": ["tasks", "jobs", "notify-if-due-soon"],
+      "machines": ["homeserver"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["7pm"]
+        }
+      }
+    }
+  ]
+}
