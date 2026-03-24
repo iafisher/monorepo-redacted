@@ -354,7 +354,7 @@ def _make_email(
 <p><a href="http://llm/transcript/{conversation_id}">View LLM transcript</a></p>
 
 <ol>
-  <li><pre><code>ssh homeserver cat {outfile} | pbcopy</code></pre></li>
+  <li><pre><code>ssh homeserver2 cat {outfile} | pbcopy</code></pre></li>
   <li>
     <a href="https://en.wikipedia.org/w/index.php?title={article}&action=edit&oldid={revision}">
       Edit the page.

@@ -37,7 +37,9 @@ class TaskUpdate:
 def main_create(
     title: str,
     *,
-    category: str,
+    category: Annotated[
+        str, command.Extra(help="options: " + ", ".join(sorted(KNOWN_CATEGORIES)))
+    ],
     status: str = "open",
     appeal: str = "normal",
     priority: str = "normal",
@@ -49,6 +51,19 @@ def main_create(
         raise KgError(
             "unknown category", category=category, known_categories=KNOWN_CATEGORIES
         )
+
+    if backlog_until is not None:
+        status = "backlog"
+        backlog_until_date = datetime.date.fromisoformat(backlog_until)
+        if backlog_until_date <= timehelper.today():
+            raise KgError(
+                "-backlog-until must be a future date", backlog_until=backlog_until_date
+            )
+
+    if due is not None:
+        due_date = datetime.date.fromisoformat(due)
+        if due_date <= timehelper.today():
+            raise KgError("-due must be a future date", due=due_date)
 
     priority_appeal_choices = list(PRIORITY_OR_APPEAL_TO_INT.keys())
     priority_int = PRIORITY_OR_APPEAL_TO_INT.get(priority)
@@ -262,20 +277,25 @@ jobs_cmd.add2(
     main_jobs_reopen_if_backlog_until_past,
     less_logging=False,
 )
-jobs_cmd.add2("notify-if-due-soon", main_jobs_notify_if_due_soon, less_logging=False)
+jobs_cmd.add2(
+    "notify-if-due-soon",
+    main_jobs_notify_if_due_soon,
+    help="Commands to run as scheduled jobs.",
+    less_logging=False,
+)
 
-mark_cmd = command.Group()
+mark_cmd = command.Group(help="Mark the status of tasks.")
 mark_cmd.add2("backlog", main_mark_backlog)
 mark_cmd.add2("blocked", main_mark_blocked)
 mark_cmd.add2("done", main_mark_done)
 mark_cmd.add2("open", main_mark_open)
 mark_cmd.add2("wontfix", main_mark_wontfix)
 
-cmd.add2("create", main_create)
+cmd.add2("create", main_create, help="Create a new task.")
 cmd.add("jobs", jobs_cmd)
-cmd.add2("list", main_list)
+cmd.add2("list", main_list, help="List tasks.")
 cmd.add("mark", mark_cmd)
-cmd.add2("update", main_update)
+cmd.add2("update", main_update, help="Update an existing task.")
 
 
 if __name__ == "__main__":

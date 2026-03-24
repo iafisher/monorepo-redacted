@@ -85,7 +85,7 @@ export default class ShellCommandPlugin extends Plugin {
     }
 
     // TODO(2025-07): common environment?
-    const env = { KG_MACHINE: "laptop", PGHOST: "homeserver" };
+    const env = { KG_MACHINE: "laptop", PGHOST: "homeserver2" };
     console.log("Running shell command:", { cmdTemplate, cmd, cwd, env });
     exec(cmd, { cwd, env }, (error: any, stdout: string, stderr: string) => {
       console.log("Shell command exited.", { error });
