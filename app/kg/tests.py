@@ -247,7 +247,6 @@ Arguments:
 
  [-debug]       . Run the server in debug mode.
  [-port ARG]    . (default: 7900)
- [-testdb]      . Run against the test database.
 
 
 ------------

@@ -2,16 +2,15 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from lib import command, dblog, secrets
 from iafisher_foundation.prelude import *
-from lib.testing import am_i_testing
+from lib import command, dblog, kgenv, secrets
 
 from .redacted import *
 
 
 def send_email(subject: str, body: str, recipients: List[str], *, html: bool) -> None:
     recipients_string = ", ".join(recipients)
-    if am_i_testing():
+    if kgenv.get_mode() == "test":
         print(f"EMAIL: To: {recipients_string}, Subject: {subject}")
         return
 

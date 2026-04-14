@@ -249,8 +249,7 @@ Mon 2025-03-10 02:31:00-04:00: next at 2025-03-11 02:30:00-04:00""",
 
     def test_server(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            os.environ["IAN_DIR"] = tmpdir
-            os.environ["KG_OVERRIDE_LOCALDB_PATH"] = os.path.join(tmpdir, "local.db")
+            os.environ["KG_TEST_DIR"] = tmpdir
             tmpdirp = Path(tmpdir)
             os.mkdir(tmpdirp / "apps")
             appdir = tmpdirp / "apps" / "jobserver"
@@ -415,7 +414,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  0            XXX
     def test_sighup_bug(self):
         warnings.simplefilter("ignore", ResourceWarning)
         with tempfile.TemporaryDirectory() as tmpdir:
-            os.environ["IAN_DIR"] = tmpdir
+            os.environ["KG_TEST_DIR"] = tmpdir
             tmpdirp = Path(tmpdir)
             os.mkdir(tmpdirp / "apps")
             appdir = tmpdirp / "apps" / "jobserver"

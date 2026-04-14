@@ -13,19 +13,11 @@ from lib.pdb import pdb
 from .redacted import *
 
 
-APP_DIR = kgenv.get_ian_dir() / "apps" / "bookmarks"
-AUTHORS_FILE = APP_DIR / "zulip-authors.txt"
-
-STATE_FILE = APP_DIR / "state.json"
-DEV_STATE_FILE = APP_DIR / "state-dev.json"
-
-
 def main(*, dry_run: bool) -> None:
     authors_of_interest = fetch_authors_of_interest()
 
     client = get_client()
-    state_file = DEV_STATE_FILE if kgenv.am_i_in_dev() else STATE_FILE
-    with State.with_lock(state_file) as lock_file:
+    with State.with_lock(kgenv.get_app_dir("bookmarks") / "state.json") as lock_file:
         state = lock_file.read()
         messages = fetch_messages(client, state.latest_zulip_message_id)
 
@@ -153,12 +145,13 @@ def fetch_messages(
 
 
 def fetch_authors_of_interest() -> Set[str]:
-    if not AUTHORS_FILE.exists():
+    filepath = kgenv.get_app_dir("bookmarks") / "zulip-authors.txt"
+    if not filepath.exists():
         return set()
 
     return set(
         line.strip()
-        for line in AUTHORS_FILE.read_text().splitlines()
+        for line in filepath.read_text().splitlines()
         if not line.isspace() and not line.lstrip().startswith("#")
     )
 

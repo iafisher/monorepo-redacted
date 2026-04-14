@@ -121,6 +121,5 @@ Arguments:
 
  [-debug]       . Run the server in debug mode.
  [-port ARG]    . (default: 5000)
- [-testdb]      . Run against the test database.
 """,
         )

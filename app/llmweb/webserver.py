@@ -9,10 +9,7 @@ from flask import Response, render_template_string
 
 from app.llm2 import commanddef
 from app.llm2.commanddef import CommandDef
-from app.llm2.code_alone import (
-    REQUEST_DIR as CODE_ALONE_REQUEST_DIR,
-    Request as CodeAloneRequest,
-)
+from app.llm2.code_alone import get_request_dir, Request as CodeAloneRequest
 from app.llm2.redacted import *
 from app.llmweb import db_models, rpc
 from iafisher_foundation import timehelper
@@ -493,7 +490,7 @@ def get_citations(
 
 
 def enqueue_code_alone_request(llm_conversation_id: int, prompt: str) -> uuid.UUID:
-    request_dir = CODE_ALONE_REQUEST_DIR
+    request_dir = get_request_dir()
     request_dir.mkdir(parents=True, exist_ok=True)
     request_id = uuid.uuid4()
 

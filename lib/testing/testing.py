@@ -2,7 +2,6 @@ import os
 import pathlib
 import subprocess
 import textwrap
-import unittest
 import uuid
 from io import StringIO
 from typing import Any, Callable
@@ -16,21 +15,13 @@ import expecttest
 import psycopg
 
 S = textwrap.dedent
-TESTING_ENV_VAR = "KG_TESTING"
-
-
-# TODO(2025-07): Move into lib/kgenv?
-def am_i_testing() -> bool:
-    # would be nice to use `oshelper.get_boolean_env_var` here, but that creates a circular
-    # dependency.
-    return os.environ.get(TESTING_ENV_VAR) == "1"
 
 
 class Base(expecttest.TestCase):
     @classmethod
     @override
     def setUpClass(cls):
-        os.environ[TESTING_ENV_VAR] = "1"
+        os.environ["KG_MODE"] = "test"
 
     def assertStdout(self, expected: str, actual_callable: Callable[[], Any]) -> None:
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
@@ -62,8 +53,7 @@ class BaseWithDatabase(Base):
     def setUpClass(cls):
         super().setUpClass()
         cls.dbname = f"test-{uuid.uuid4()}"
-        os.environ["KG_OVERRIDE_DB_USER"] = cls.DB_USER
-        os.environ["KG_OVERRIDE_DB_NAME"] = cls.dbname
+        os.environ["KG_TEST_DB_NAME"] = cls.dbname
         # See app/db/main.py for similar command.
         # `-s` means copy schema only, no data.
         sh0(
@@ -75,8 +65,7 @@ class BaseWithDatabase(Base):
     @classmethod
     @override
     def tearDownClass(cls) -> None:
-        del os.environ["KG_OVERRIDE_DB_USER"]
-        del os.environ["KG_OVERRIDE_DB_NAME"]
+        del os.environ["KG_TEST_DB_NAME"]
 
         super().tearDownClass()
         sh0(f"dropdb {cls.dbname}")

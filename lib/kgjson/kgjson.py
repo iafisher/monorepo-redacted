@@ -1,7 +1,8 @@
+import decimal
 import json
 import types
 import typing
-from typing import Generic, ItemsView, Self, TypeVar, cast
+from typing import Generic, ItemsView, NewType, Self, TypeVar, cast
 
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
@@ -155,8 +156,22 @@ class Base:
                     return humanunits.parse_time(x)
                 except KgError as e:
                     raise e.attach(json_path=path)
+            elif expected_type is decimal.Decimal:
+                try:
+                    return decimal.Decimal(x)
+                except decimal.InvalidOperation:
+                    raise KgError(
+                        "could not parse decimal value", json_path=path, value=x
+                    )
             else:
                 raise lazy_wrong_type_for_value()
+        elif isinstance(expected_type, NewType):
+            if expected_type.__supertype__ is str:
+                return x
+            else:
+                raise KgError(
+                    "only str-valued NewTypes are supported", json_path=path, value=x
+                )
         else:
             if origin_type is list:
                 if not isinstance(x, list):
@@ -173,7 +188,11 @@ class Base:
                     else:
                         raise lazy_wrong_type_for_value()
 
-                if arg_types[0] is not str:
+                if (
+                    arg_types[0] is not str
+                    # handle the `NewType` case
+                    and getattr(arg_types[0], "__supertype__") is not str
+                ):
                     raise KgError(
                         "dict keys must be strings", type=arg_types[0], json_path=path
                     )
@@ -305,6 +324,8 @@ class KgJsonEncoder(json.JSONEncoder):
             return o.isoformat()
         elif isinstance(o, datetime.time):
             return o.isoformat()
+        elif isinstance(o, decimal.Decimal):
+            return str(o)
 
         return super().default(o)
 

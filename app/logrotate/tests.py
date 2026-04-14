@@ -17,7 +17,7 @@ Usage: logrotate ...
 Arguments:
 
   -max-age-days ARG    . delete log files older than this
-  [-directory ARG]     . (default: ~/.ian/logs)
+  [-directory ARG]     . (default: ~/.ian/dev/logs)
   [-dry-run]
 """,
         )

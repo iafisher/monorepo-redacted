@@ -224,10 +224,7 @@ def _add_and_take_from_queue(message: Message) -> Optional[Message]:
 
 
 def _path() -> PathLike:
-    return os.environ.get(
-        "KG_EMAILALERTS_STATE_FILE",
-        kgenv.get_ian_dir() / "apps" / "emailalerts" / "state_v2.json",
-    )
+    return kgenv.get_app_dir("emailalerts") / "state_v2.json"
 
 
 def _find_or_create(state: State, label: List[str]) -> AlertState:

@@ -10,11 +10,11 @@ from lib import command, kgenv, kghttp, pdb
 
 
 T = Bookmark.T
-FEEDS_FILE = kgenv.get_ian_dir() / "apps" / "bookmarks" / "rss_feeds.txt"
 
 
 def main(*, dry_run: bool) -> None:
-    for line in FEEDS_FILE.read_text().splitlines():
+    filepath = kgenv.get_ian_dir() / "apps" / "bookmarks" / "rss_feeds.txt"
+    for line in filepath.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue

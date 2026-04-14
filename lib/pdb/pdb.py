@@ -15,15 +15,11 @@ from psycopg.rows import RowFactory, TupleRow, tuple_row
 from psycopg.abc import Params, Query
 
 
-class User(StrEnum):
-    ADMIN = "postgres"
-    DEFAULT = "iafisher"
-    READONLY = "readonly_user"
-
-
-class DbName(StrEnum):
-    DEFAULT = "iafisher"
-    TEST = "testdb"
+DBNAME_PROD = "iafisher"
+DBNAME_DEV = "testdb"
+USER_NORMAL = "iafisher"
+USER_ADMIN = "postgres"
+USER_READONLY = "readonly_user"
 
 
 class TransactionMode(StrEnum):
@@ -131,30 +127,19 @@ class Connection:
 @contextmanager
 def connect(
     *,
-    user: User = User.DEFAULT,
-    dbname: DbName = DbName.DEFAULT,
     transaction_mode: TransactionMode = TransactionMode.ONE_TRANSACTION,
 ):
-    override_user_as_str = os.environ.get("KG_OVERRIDE_DB_USER")
-    user_as_str = os.environ.get("KG_OVERRIDE_DB_USER", user.value)
-    dbname_as_str = os.environ.get("KG_OVERRIDE_DB_NAME", dbname.value)
+    match kgenv.get_mode():
+        case "prod":
+            dbname = DBNAME_PROD
+        case "dev":
+            dbname = DBNAME_DEV
+        case "test":
+            dbname = os.environ["KG_TEST_DB_NAME"]
 
-    if override_user_as_str is not None:
-        user_as_str = override_user_as_str
-    elif (
-        dbname_as_str == DbName.DEFAULT.value
-        and kgenv.am_i_in_dev()
-        and user != User.READONLY
-    ):
-        user_as_str = User.READONLY.value
-        LOG.info(
-            "in development environment; overriding database user to %s", user_as_str
-        )
-    else:
-        user_as_str = user.value
-
+    user = USER_NORMAL
     conn = None
-    LOG.debug("connecting to database %r as %r", dbname_as_str, user_as_str)
+    LOG.debug("connecting to database %r as %r", dbname, user)
     try:
         match transaction_mode:
             case TransactionMode.ONE_TRANSACTION:
@@ -164,7 +149,7 @@ def connect(
             case TransactionMode.MANUAL:
                 autocommit = False
 
-        conn = Connection(user=user_as_str, dbname=dbname_as_str, autocommit=autocommit)
+        conn = Connection(user=user, dbname=dbname, autocommit=autocommit)
 
         match transaction_mode:
             case TransactionMode.ONE_TRANSACTION:

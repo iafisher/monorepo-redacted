@@ -1,6 +1,7 @@
 import logging
+
 from iafisher_foundation.prelude import *
-from lib.testing import am_i_testing
+from lib import kgenv
 
 
 class ConcisePathFormatter(logging.Formatter):
@@ -38,7 +39,7 @@ def init(*, level: int = logging.INFO) -> None:
     if root_logger.hasHandlers():
         # Tests frequently call `command.dispatch` multiple times, which in turn calls
         # `kglogging.init`.
-        if am_i_testing():
+        if kgenv.get_mode() == "test":
             return
         else:
             raise KgError("tried to initialize logging twice")

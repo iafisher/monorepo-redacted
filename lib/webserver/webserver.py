@@ -17,7 +17,7 @@ Typical usage:
 from typing import Annotated, TypeVar
 
 from iafisher_foundation.prelude import *
-from lib import command, kgjson, pdb
+from lib import command, kgjson
 
 import flask
 from flask.json.provider import DefaultJSONProvider
@@ -35,14 +35,8 @@ def make_command(
         debug: Annotated[
             bool, command.Extra(help="Run the server in debug mode.")
         ] = False,
-        testdb: Annotated[
-            bool, command.Extra(help="Run against the test database.")
-        ] = False,
-        port: int = default_port,
+        port: int = default_port
     ) -> None:
-        if testdb:
-            os.environ["KG_OVERRIDE_DB_NAME"] = pdb.DbName.TEST
-
         app.run(port=port, debug=debug, load_dotenv=False)
 
     return command.Command.from_function(main_run, help=help, less_logging=False)

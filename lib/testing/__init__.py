@@ -4,7 +4,6 @@ from .testing import (  # noqa: F401
     BaseExpectStdout,
     BaseWithDatabase,
     S,
-    am_i_testing,
     expunge_datetimes,
     shell,
 )

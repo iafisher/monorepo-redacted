@@ -4,7 +4,6 @@ import traceback
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
 from lib import kgenv, localdb, oshelper
-from lib.testing import am_i_testing
 
 from . import models
 
@@ -30,7 +29,7 @@ class LogInfo:
 
 
 def _prepare_log(event: str, payload: StrDict) -> Optional[LogInfo]:
-    if am_i_testing() or oshelper.get_boolean_env_var(
+    if kgenv.get_mode() == "test" or oshelper.get_boolean_env_var(
         "KG_DBLOG_DISABLE", default=False
     ):
         return None

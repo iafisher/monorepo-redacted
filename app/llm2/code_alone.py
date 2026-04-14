@@ -21,9 +21,6 @@ class Request(kgjson.Base):
     prompt: str
 
 
-REQUEST_DIR = kgenv.get_ian_dir() / "apps" / "llm2" / "code-alone" / "requests"
-
-
 SYSTEM_PROMPT = """\
 You are a senior software engineer LLM working on a code repository.
 
@@ -100,14 +97,15 @@ def main_check_for_requests(
         Optional[pathlib.Path], command.Extra(help="defaults to $KG_CODE_DIR")
     ] = None,
 ) -> None:
-    if not REQUEST_DIR.exists():
-        LOG.warning("request directory does not exist, doing nothing: %s", REQUEST_DIR)
+    request_dir = get_request_dir()
+    if not request_dir.exists():
+        LOG.warning("request directory does not exist, doing nothing: %s", request_dir)
         return
 
     try:
-        request_file = next(REQUEST_DIR.iterdir())
+        request_file = next(request_dir.iterdir())
     except StopIteration:
-        LOG.info("request directory empty, doing nothing: %s", REQUEST_DIR)
+        LOG.info("request directory empty, doing nothing: %s", request_dir)
     else:
         LOG.info("found request file: %s", request_file)
         request = Request.load(request_file)
@@ -129,6 +127,10 @@ def main_check_for_requests(
                 preserve_temp_dir=preserve_temp_dir,
                 code_dir=code_dir,
             )
+
+
+def get_request_dir() -> pathlib.Path:
+    return kgenv.get_app_dir("llm2") / "code-alone" / "requests"
 
 
 def main_prompt(

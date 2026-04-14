@@ -1,8 +1,24 @@
+from typing import Literal
+
 from iafisher_foundation.prelude import *
 
 
 MACHINE_HOMESERVER = "homeserver"
 MACHINE_LAPTOP = "laptop"
+
+Mode = Literal["prod", "dev", "test"]
+
+
+def get_mode() -> Mode:
+    mode_str = os.environ.get("KG_MODE")
+    if mode_str is None:
+        return "dev"
+    elif mode_str == "prod":
+        return "prod"
+    elif mode_str == "test":
+        return "test"
+    else:
+        raise KgError("invalid KG_MODE", mode_str=mode_str)
 
 
 def get_app_name() -> str:
@@ -25,10 +41,13 @@ def get_code_dir() -> pathlib.Path:
 
 
 def get_ian_dir() -> pathlib.Path:
-    try:
-        return pathlib.Path(os.environ["IAN_DIR"])
-    except KeyError:
-        return pathlib.Path.home() / ".ian"
+    match get_mode():
+        case "prod":
+            return pathlib.Path.home() / ".ian"
+        case "dev":
+            return pathlib.Path.home() / ".ian" / "dev"
+        case "test":
+            return pathlib.Path(os.environ["KG_TEST_DIR"])
 
 
 def get_app_dir(appname: str) -> pathlib.Path:
@@ -38,14 +57,6 @@ def get_app_dir(appname: str) -> pathlib.Path:
 def get_code_dir_opt() -> Optional[pathlib.Path]:
     p = os.environ.get(ENV_CODE_DIR)
     return pathlib.Path(p) if p is not None else None
-
-
-def am_i_in_dev() -> bool:
-    p = get_code_dir_opt()
-    if p is None:
-        return False
-    else:
-        return pathlib.Path(sys.argv[0]).resolve().is_relative_to(p)
 
 
 _kg_machine_envvar = "KG_MACHINE"
