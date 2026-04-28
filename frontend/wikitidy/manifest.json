@@ -6,7 +6,7 @@
   "permissions": ["storage"],
   "host_permissions": [
     "http://localhost:7800/*",
-    "https://homeserver.tail5b2358.ts.net/*"
+    "https://homeserver2.tail5b2358.ts.net/*"
   ],
   "content_scripts": [
     {

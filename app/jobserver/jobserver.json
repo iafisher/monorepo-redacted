@@ -24,7 +24,7 @@
     {
       "name": "heartbeat",
       "cmd": ["touch", "heartbeat.empty"],
-      "machines": ["laptop", "homeserver"],
+      "machines": ["laptop", "homeserver2"],
       "schedule": {
         "hourly": {
           "interval_mins": 5

@@ -36,7 +36,8 @@ def main_check_heartbeat(
         if fail_file.exists():
             LOG.info("%s exists, not sending email", fail_file)
             # TODO(2026-02): Once the jobserver has a proper RPC interface, use that instead.
-            proc = subprocess.run(["kg", "jobs", "daemon", "status"])
+            kg = pathlib.Path.home() / ".ian" / "repos" / "current" / "bin" / "kg"
+            proc = subprocess.run([kg, "jobs", "daemon", "status"])
             if proc.returncode == 0:
                 LOG.info("daemon appears to be running, deleting %s", fail_file)
                 fail_file.unlink()

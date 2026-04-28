@@ -16,7 +16,7 @@ interface NoteItem {
   matches?: SnippetMatch[];
 }
 
-const RESULTS_DISPLAY_LIMIT = 20;
+const RESULTS_DISPLAY_LIMIT = 200;
 
 class FinderModal extends Modal {
   private inputEl: HTMLInputElement;
@@ -160,6 +160,14 @@ class FinderModal extends Modal {
 
   renderResults() {
     this.resultsEl.empty();
+
+    const resultCountDiv = this.resultsEl.createEl("p");
+    const n = this.filteredNotes.length;
+    const s = n === 1 ? "" : "s";
+    resultCountDiv.textContent = `${n} result${s}`;
+    if (n > RESULTS_DISPLAY_LIMIT) {
+      resultCountDiv.textContent += ` (${n - RESULTS_DISPLAY_LIMIT} filtered out)`;
+    }
 
     let scrollToMe: HTMLElement | null = null;
     this.filteredNotes

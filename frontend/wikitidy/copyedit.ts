@@ -17,7 +17,7 @@ const BACKENDS: Record<BackendChoice, BackendConfig> = {
   },
   prod: {
     label: "prod",
-    url: "https://homeserver.tail5b2358.ts.net/wikipedia-api",
+    url: "https://homeserver2.tail5b2358.ts.net/wikipedia-api",
   },
 };
 

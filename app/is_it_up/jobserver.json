@@ -8,7 +8,7 @@
         "-keyphrase",
         "How many cities"
       ],
-      "machines": ["homeserver"],
+      "machines": ["homeserver2"],
       "schedule": {
         "hourly": {
           "interval_mins": 60
@@ -19,7 +19,7 @@
     {
       "name": "is-it-up::iafisher",
       "cmd": ["is-it-up", "https://iafisher.com", "-keyphrase", "Ian Fisher"],
-      "machines": ["homeserver"],
+      "machines": ["homeserver2"],
       "schedule": {
         "hourly": {
           "interval_mins": 60

@@ -13,7 +13,7 @@
     {
       "name": "logrotate",
       "cmd": ["/home/iafisher/.ian/bin/logrotate", "-max-age-days", "14"],
-      "machines": ["homeserver"],
+      "machines": ["homeserver2"],
       "schedule": {
         "hourly": {
           "interval_mins": 60

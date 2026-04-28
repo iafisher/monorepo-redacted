@@ -35,7 +35,7 @@
         "-ssh-here-first",
         "iafisher.com"
       ],
-      "machines": ["homeserver"],
+      "machines": ["homeserver2"],
       "schedule": {
         "daily": {
           "times_of_day": ["2:30am"]

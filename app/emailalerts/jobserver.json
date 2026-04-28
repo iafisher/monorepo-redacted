@@ -3,7 +3,7 @@
     {
       "name": "emailalerts::flush",
       "cmd": ["emailalerts", "flush"],
-      "machines": ["homeserver", "laptop"],
+      "machines": ["homeserver2", "laptop"],
       "debug_env": true,
       "schedule": {
         "hourly": {

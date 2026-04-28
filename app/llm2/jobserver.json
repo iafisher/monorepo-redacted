@@ -8,7 +8,7 @@
           "interval_mins": 5
         }
       },
-      "machines": ["homeserver"]
+      "machines": ["homeserver2"]
     },
     {
       "name": "llm2::code-alone",
@@ -24,7 +24,7 @@
           "interval_mins": 15
         }
       },
-      "machines": ["homeserver"]
+      "machines": ["homeserver2"]
     }
   ]
 }

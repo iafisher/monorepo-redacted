@@ -84,9 +84,9 @@ def _accept_remote_patch_file(request_id: str) -> None:
         request_id, ian_dir=pathlib.Path("/home/iafisher/.ian")
     )
     sh0(
-        f"ssh homeserver cat {q(remote_path.as_posix())}" " | git apply -",
+        f"ssh homeserver2 cat {q(remote_path.as_posix())}" " | git apply -",
     )
-    sh0(f"ssh homeserver rm {q(remote_path.as_posix())}")
+    sh0(f"ssh homeserver2 rm {q(remote_path.as_posix())}")
 
 
 def main_check_for_requests(

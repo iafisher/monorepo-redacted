@@ -3,7 +3,7 @@ from typing import Literal
 from iafisher_foundation.prelude import *
 
 
-MACHINE_HOMESERVER = "homeserver"
+MACHINE_HOMESERVER = "homeserver2"
 MACHINE_LAPTOP = "laptop"
 
 Mode = Literal["prod", "dev", "test"]
