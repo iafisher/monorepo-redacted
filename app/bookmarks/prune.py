@@ -23,6 +23,7 @@ def main(*, days_to_retain: int, dry_run: bool) -> None:
                   {time_archived} IS NULL
                   AND {time_created} < %(cutoff)s
                   AND {time_created} >= %(never_prune_before)s
+                  AND NOT no_auto_prune
                 """
             ).format(
                 table=T.table,

@@ -32,36 +32,23 @@ def main_check_heartbeat(
     if age_secs > max_age_secs:
         LOG.info("FAIL")
 
-        fail_file = heartbeat_dirpath / "heartbeat_failed_email_already_sent"
-        if fail_file.exists():
-            LOG.info("%s exists, not sending email", fail_file)
-            # TODO(2026-02): Once the jobserver has a proper RPC interface, use that instead.
-            kg = pathlib.Path.home() / ".ian" / "repos" / "current" / "bin" / "kg"
-            proc = subprocess.run([kg, "jobs", "daemon", "status"])
-            if proc.returncode == 0:
-                LOG.info("daemon appears to be running, deleting %s", fail_file)
-                fail_file.unlink()
-        else:
-            machine_fallback = "<unknown>"
-            try:
-                machine = kgenv.get_machine_opt()
-                if machine is None:
-                    machine = kgenv.get_env().get("KG_MACHINE", machine_fallback)
-            except Exception:
-                LOG.exception("failed to get machine name")
-                machine = machine_fallback
+        machine_fallback = "<unknown>"
+        try:
+            machine = kgenv.get_machine_opt()
+            if machine is None:
+                machine = kgenv.get_env().get("KG_MACHINE", machine_fallback)
+        except Exception:
+            LOG.exception("failed to get machine name")
+            machine = machine_fallback
 
-            minutes = max_age_secs / 60
-            simplemail.send_email(
-                f"Jobserver heartbeat missed on {machine}",
-                f"<p>The heartbeat file on {machine} has not been touched in {minutes:.1f} minutes. "
-                + "This may indicate that the jobserver is not running properly.</p> "
-                + f"<p>Once the problem has been fixed, delete <code>{fail_file}</code> on {machine}.</p>",
-                recipients=["ian@iafisher.com"],
-                html=True,
-            )
-            fail_file.touch()
-
+        minutes = max_age_secs / 60
+        simplemail.send_email(
+            f"Jobserver heartbeat missed on {machine}",
+            f"<p>The heartbeat file on {machine} has not been touched in {minutes:.1f} minutes. "
+            + "This may indicate that the jobserver is not running properly.</p>",
+            recipients=["ian@iafisher.com"],
+            html=True,
+        )
         sys.exit(1)
     else:
         LOG.info("OK")

@@ -36,14 +36,13 @@ def fetch_bookmarks(
     return db.fetch_all(
         pdb.SQL(
             """
-            SELECT {star}
+            SELECT *
             FROM {table}
             WHERE {time_archived} IS NULL
                 OR {bookmark_id} = %(bookmark_id)s
             ORDER BY {time_created} DESC, {bookmark_id} DESC
             """
         ).format(
-            star=T.star,
             table=T.table,
             time_archived=T.time_archived,
             bookmark_id=T.bookmark_id,
@@ -159,6 +158,31 @@ def api_unarchive():
         )
         dblog.log(
             "bookmark_unarchived",
+            dict(bookmark_id=req.bookmark_id, title=title),
+        )
+        bookmarks = fetch_bookmarks(db)
+        return webserver.json_response(rpc.LoadResponse(bookmarks=bookmarks))
+
+
+@app.route("/api/mark-no-auto-prune", methods=["POST"])
+def api_mark_no_auto_prune():
+    req = webserver.request(rpc.MarkNoAutoPruneRequest)
+
+    with pdb.connect() as db:
+        T = models.Bookmark.T
+        title = db.fetch_val(
+            pdb.SQL(
+                """
+                UPDATE {table}
+                SET no_auto_prune = true
+                WHERE {bookmark_id} = %(bookmark_id)s
+                RETURNING {title}
+                """
+            ).format(table=T.table, bookmark_id=T.bookmark_id, title=T.title),
+            dict(bookmark_id=req.bookmark_id),
+        )
+        dblog.log(
+            "bookmark_marked_no_auto_prune",
             dict(bookmark_id=req.bookmark_id, title=title),
         )
         bookmarks = fetch_bookmarks(db)

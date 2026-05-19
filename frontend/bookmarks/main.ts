@@ -159,6 +159,7 @@ const BookmarkItem = {
       onCancelEditing: (bookmark: Bookmark) => void;
       onArchive: (bookmark: Bookmark, reason: string) => void;
       onUnarchive: (bookmark: Bookmark) => void;
+      onMarkNoAutoPrune: (bookmark: Bookmark) => void;
     }>,
   ) {
     const {
@@ -171,6 +172,7 @@ const BookmarkItem = {
       onCancelEditing,
       onArchive,
       onUnarchive,
+      onMarkNoAutoPrune,
     } = vnode.attrs;
 
     const isArchived = bookmark.reasonArchived !== "";
@@ -245,14 +247,16 @@ const BookmarkItem = {
                       },
                       m.trust(feather.icons.archive.toSvg({ size: 16 })),
                     ),
-                    m(
-                      "button.icon-btn.delete-btn",
-                      {
-                        onclick: () => onArchive(bookmark, "deleted"),
-                        title: "Delete bookmark",
-                      },
-                      m.trust(feather.icons.trash.toSvg({ size: 16 })),
-                    ),
+                    bookmark.noAutoPrune
+                      ? null
+                      : m(
+                          "button.icon-btn",
+                          {
+                            onclick: () => onMarkNoAutoPrune(bookmark),
+                            title: "Prevent bookmark from being auto-pruned",
+                          },
+                          m.trust(feather.icons.lock.toSvg({ size: 16 })),
+                        ),
                     m(
                       "button.icon-btn",
                       {
@@ -516,6 +520,28 @@ const BookmarksApp = {
     this.refreshBookmarks(state, response);
   },
 
+  async markBookmarkNoAutoPrune(
+    state: State,
+    bookmark: Bookmark,
+  ): Promise<void> {
+    state.error = "";
+    let response: rpc.LoadResponse;
+    try {
+      const request: rpc.MarkNoAutoPruneRequest = {
+        bookmarkId: bookmark.bookmarkId,
+      };
+      response = await m.request({
+        method: "POST",
+        url: "/api/mark-no-auto-prune",
+        body: request,
+      });
+    } catch (error) {
+      state.error = `failed to mark bookmark no-auto-prune ${bookmark.bookmarkId} ('${bookmark.title}')`;
+      return;
+    }
+    this.refreshBookmarks(state, response);
+  },
+
   getTagCounts(state: State): [string, number][] {
     const tagCountsMap = new Map();
     state.bookmarks.forEach((bookmark) => {
@@ -635,6 +661,8 @@ const BookmarksApp = {
               this.archiveBookmark(vnode.state, bookmark, reason),
             onUnarchive: (bookmark: Bookmark) =>
               this.unarchiveBookmark(vnode.state, bookmark),
+            onMarkNoAutoPrune: (bookmark: Bookmark) =>
+              this.markBookmarkNoAutoPrune(vnode.state, bookmark),
           });
         }),
       ),

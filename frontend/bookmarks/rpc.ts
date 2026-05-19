@@ -10,6 +10,7 @@ export interface Bookmark {
   source: string;
   reasonArchived: string;
   tags: string[];
+  noAutoPrune: boolean;
   timeCreated: string;
   timeArchived: string | null;
 }
@@ -33,5 +34,9 @@ export interface ArchiveRequest {
 }
 
 export interface UnarchiveRequest {
+  bookmarkId: number;
+}
+
+export interface MarkNoAutoPruneRequest {
   bookmarkId: number;
 }

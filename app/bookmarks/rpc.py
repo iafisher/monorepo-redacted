@@ -15,6 +15,7 @@ class Bookmark(kgjson.Base):
     source: str
     reason_archived: str
     tags: List[str]
+    no_auto_prune: bool
     time_created: datetime.datetime
     time_archived: Optional[datetime.datetime]
 
@@ -42,4 +43,9 @@ class ArchiveRequest(kgjson.Base):
 
 @dataclass
 class UnarchiveRequest(kgjson.Base):
+    bookmark_id: int
+
+
+@dataclass
+class MarkNoAutoPruneRequest(kgjson.Base):
     bookmark_id: int

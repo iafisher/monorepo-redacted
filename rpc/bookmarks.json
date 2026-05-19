@@ -12,15 +12,14 @@
         { "name": "source", "type": "string" },
         { "name": "reason_archived", "type": "string" },
         { "name": "tags", "type": "string[]" },
+        { "name": "no_auto_prune", "type": "boolean" },
         { "name": "time_created", "type": "datetime" },
         { "name": "time_archived", "type": "datetime?" }
       ]
     },
     {
       "name": "LoadResponse",
-      "fields": [
-        { "name": "bookmarks", "type": "Bookmark[]" }
-      ]
+      "fields": [{ "name": "bookmarks", "type": "Bookmark[]" }]
     },
     {
       "name": "UpdateRequest",
@@ -42,9 +41,11 @@
     },
     {
       "name": "UnarchiveRequest",
-      "fields": [
-        { "name": "bookmark_id", "type": "int" }
-      ]
+      "fields": [{ "name": "bookmark_id", "type": "int" }]
+    },
+    {
+      "name": "MarkNoAutoPruneRequest",
+      "fields": [{ "name": "bookmark_id", "type": "int" }]
     }
   ],
   "python_file": "app/bookmarks/rpc.py",
