@@ -91,3 +91,17 @@ def get_env() -> Dict[str, str]:
         r[key] = value
 
     return r
+
+
+PLATFORM_MACOS = "mac"
+PLATFORM_LINUX = "linux"
+
+
+def get_platform() -> Literal["mac", "linux"]:
+    match sys.platform:
+        case "darwin":
+            return PLATFORM_MACOS
+        case "linux":
+            return PLATFORM_LINUX
+        case _:
+            raise KgError("unknown platform", platform=sys.platform)

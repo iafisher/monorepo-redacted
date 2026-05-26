@@ -1,6 +1,8 @@
 from .kgenv import (
     MACHINE_HOMESERVER,
     MACHINE_LAPTOP,
+    PLATFORM_LINUX,
+    PLATFORM_MACOS,
     get_app_dir,
     get_app_name,
     get_code_dir,
@@ -9,4 +11,5 @@ from .kgenv import (
     get_machine,
     get_machine_opt,
     get_mode,
+    get_platform,
 )

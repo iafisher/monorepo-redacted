@@ -118,6 +118,10 @@ def maybe_upload_page_to_site(
         print(f"SKIPPING {path_str}")
         return False
 
+    if path.stem == "Untitled":
+        print(f"SKIPPING {path_str}")
+        return False
+
     # IMPORTANT: Do the hash comparison on `fulltext_without_properties`, not `fulltext`
     # since the server doesn't have the full text.
     server_hash = hashes.get(path_str)
