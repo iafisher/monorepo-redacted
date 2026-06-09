@@ -236,7 +236,28 @@ class GPT(APIWrapper):
     ) -> List[universal.Message]:
         r: List[universal.Message] = []
         for message in messages:
-            if "content" in message:
+            if message["type"] == "reasoning":
+                r.append(
+                    universal.ThinkingMessage(
+                        role="assistant", thinking="<GPT thinking omitted>"
+                    )
+                )
+            elif message["type"] == "function_call":
+                r.append(
+                    universal.ToolUseRequest(
+                        role="assistant",
+                        tool_use_id=message["call_id"],
+                        tool_name=message["name"],
+                        tool_input=json.loads(message["arguments"]),
+                    )
+                )
+            elif message["type"] == "function_call_output":
+                r.append(
+                    universal.ToolUseResponse(
+                        role="user", tool_output=message["output"]
+                    )
+                )
+            elif "content" in message:
                 role = message["role"]
                 for block in message["content"]:
                     if role == "assistant":
@@ -275,27 +296,6 @@ class GPT(APIWrapper):
                             r.append(
                                 universal.UnknownMessage(role="user", raw_json=block)
                             )
-            elif message["type"] == "reasoning":
-                r.append(
-                    universal.ThinkingMessage(
-                        role="assistant", thinking="<GPT thinking omitted>"
-                    )
-                )
-            elif message["type"] == "function_call":
-                r.append(
-                    universal.ToolUseRequest(
-                        role="assistant",
-                        tool_use_id=message["call_id"],
-                        tool_name=message["name"],
-                        tool_input=json.loads(message["arguments"]),
-                    )
-                )
-            elif message["type"] == "function_call_output":
-                r.append(
-                    universal.ToolUseResponse(
-                        role="user", tool_output=message["output"]
-                    )
-                )
             else:
                 r.append(universal.UnknownMessage(role="assistant", raw_json=message))
         return r
