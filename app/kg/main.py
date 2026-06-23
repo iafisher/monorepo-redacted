@@ -93,20 +93,27 @@ def main_shell() -> None:
 
         name = module_path.name
         module = importlib.import_module(f"lib.{name}")
-        if name == "prelude":
-            for key in dir(module):
-                if key.startswith("_"):
-                    continue
+        imported.append(name)
+        local[name] = module
 
-                local[key] = getattr(module, key)
-        else:
-            imported.append(name)
-            local[name] = module
+    def _import_star(module_name: str) -> None:
+        module = importlib.import_module(module_name)
+        for key in dir(module):
+            if key.startswith("_"):
+                continue
+
+            local[key] = getattr(module, key)
+
+    foundation_module_name = "iafisher_foundation"
+    _import_star(foundation_module_name)
+    prelude_module_name = f"{foundation_module_name}.prelude"
+    _import_star(prelude_module_name)
 
     imported.sort()
     for module_name in imported:
         print(f"{colors.cyan('from')} lib {colors.cyan('import')} {module_name}")
-    print(f"{colors.cyan('from')} lib.prelude {colors.cyan('import')} *")
+    print(f"{colors.cyan('from')} {foundation_module_name} {colors.cyan('import')} *")
+    print(f"{colors.cyan('from')} {prelude_module_name} {colors.cyan('import')} *")
     print()
 
     histfile = kgenv.get_ian_dir() / ".shellhistory"

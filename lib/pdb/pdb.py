@@ -65,6 +65,9 @@ class Connection:
             results.append(r)
         return results
 
+    def rollback(self) -> None:
+        raise psycopg.Rollback()
+
     def fetch_one(
         self,
         query: Query2,

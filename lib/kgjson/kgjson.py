@@ -37,22 +37,24 @@ class LockFile(Generic[T]):
         d: Dict[str, Any] = json.loads(text) if text else {}
         return self.deserialize(d)
 
-    def write(self, t: T) -> None:
+    def write(self, t: T, **kwargs: Any) -> None:
         f = self.lock_file.f
         if f is None:
             raise KgError("tried to write to lock file without acquiring it first")
 
         f.seek(0)
         f.truncate(0)
-        f.write(t.serialize())  # type: ignore
+        f.write(t.serialize(**kwargs))  # type: ignore
 
 
 class Base:
-    def serialize(self, *, camel_case: bool = False) -> str:
+    def serialize(
+        self, *, camel_case: bool = False, indent: Optional[int] = None
+    ) -> str:
         as_dict = dataclasses.asdict(self)  # type: ignore
         if camel_case:
             as_dict = _snake_to_camel_dict(as_dict)
-        return json.dumps(as_dict, cls=KgJsonEncoder)
+        return json.dumps(as_dict, indent=indent, cls=KgJsonEncoder)
 
     def save(self, p: PathLike) -> None:
         oshelper.replace_file(p, self.serialize())

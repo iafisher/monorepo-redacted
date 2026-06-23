@@ -8,10 +8,22 @@ from iafisher_foundation.prelude import *
 def replace_file(p: PathLike, contents: Union[str, bytes]) -> None:
     tmppath = _tmppath_for(p)
     if isinstance(contents, str):
-        tmppath.write_text(contents)
+        with open(tmppath, "w") as f:
+            f.write(contents)
+            f.flush()
+            os.fsync(f.fileno())
     else:
-        tmppath.write_bytes(contents)
+        with open(tmppath, "wb") as f:
+            f.write(contents)
+            f.flush()
+            os.fsync(f.fileno())
+
     os.rename(tmppath, p)
+    dir_fd = os.open(tmppath.parent, os.O_DIRECTORY)
+    try:
+        os.fsync(dir_fd)
+    finally:
+        os.close(dir_fd)
 
 
 def _tmppath_for(p: PathLike) -> pathlib.Path:

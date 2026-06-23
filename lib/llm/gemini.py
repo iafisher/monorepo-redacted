@@ -67,8 +67,8 @@ class Gemini(APIWrapper):
             response = (
                 mock_stream(self.model, self.to_universal_messages(messages))
                 if self.model in MOCK_MODELS
-                else self.client.models.generate_content_stream(  # type: ignore[reportUnknownReturnType]
-                    model=self.model, contents=request_messages, config=config
+                else self.client.models.generate_content_stream(
+                    model=self.model, contents=request_messages, config=config  # type: ignore[reportArgumentType]
                 )
             )
 
@@ -265,9 +265,9 @@ class Gemini(APIWrapper):
         if self.model in MOCK_MODELS or len(messages) == 0:
             return 0
 
-        response = self.client.models.count_tokens(  # type: ignore
+        response = self.client.models.count_tokens(
             model=self.model,
-            contents=[_format_for_api(message) for message in messages],
+            contents=[_format_for_api(message) for message in messages],  # type: ignore[reportArgumentType]
             # Passing system prompt and tools is currently broken in the Gemini API:
             # https://github.com/googleapis/python-genai/issues/432
             # config=dict(

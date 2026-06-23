@@ -24,9 +24,14 @@ class Base(expecttest.TestCase):
         os.environ["KG_MODE"] = "test"
 
     def assertStdout(self, expected: str, actual_callable: Callable[[], Any]) -> None:
+        stdout = self.capture_stdout(actual_callable)
+        self.assertEqual(S(expected), stdout)
+
+    def capture_stdout(self, f: Callable[[], Any]) -> str:
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            actual_callable()
-            self.assertEqual(S(expected), mock_stdout.getvalue())
+            f()
+
+        return mock_stdout.getvalue()
 
 
 class BaseExpectStdout(Base):
