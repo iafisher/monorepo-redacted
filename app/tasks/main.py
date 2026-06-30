@@ -54,14 +54,14 @@ def main_create(
 
     if backlog_until is not None:
         status = "backlog"
-        backlog_until_date = datetime.date.fromisoformat(backlog_until)
+        backlog_until_date = parse_date(backlog_until)
         if backlog_until_date <= timehelper.today():
             raise KgError(
                 "-backlog-until must be a future date", backlog_until=backlog_until_date
             )
 
     if due is not None:
-        due_date = datetime.date.fromisoformat(due)
+        due_date = parse_date(due)
         if due_date <= timehelper.today():
             raise KgError("-due must be a future date", due=due_date)
 

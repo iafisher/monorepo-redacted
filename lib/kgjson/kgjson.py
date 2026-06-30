@@ -119,7 +119,7 @@ class Base:
                 return x
             elif expected_type is datetime.date and isinstance(x, str):
                 try:
-                    return datetime.date.fromisoformat(x)
+                    return parse_date(x)
                 except ValueError:
                     raise KgError(
                         "date field must be in ISO 8601 format (YYYY-MM-DD)",

@@ -33,6 +33,7 @@ export interface VoteResponse {}
 export interface PromptRequest {
   conversationId: number;
   message: string;
+  inferenceMode: string | null;
 }
 
 export interface FetchConversationsResponseItem {

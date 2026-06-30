@@ -136,7 +136,10 @@ def _create_prompt_session(app_subname: str, state: State) -> PromptSession[str]
         history_filename = f"llm2-{app_subname}-history"
 
     history_path: Path = kgenv.get_ian_dir() / "cache" / history_filename
-    history = FileHistory(history_path)
+    if history_path.exists():
+        history = FileHistory(history_path)
+    else:
+        history = None
 
     return PromptSession(
         ANSI(colors.yellow("> ")),

@@ -42,7 +42,8 @@
       "name": "PromptRequest",
       "fields": [
         { "name": "conversation_id", "type": "int" },
-        { "name": "message", "type": "string" }
+        { "name": "message", "type": "string" },
+        { "name": "inference_mode", "type": "string?" }
       ]
     },
     {

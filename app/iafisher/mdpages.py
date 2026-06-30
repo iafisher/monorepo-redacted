@@ -1,6 +1,7 @@
 from typing import Annotated
 
 import markdown
+import yaml
 from markdown.extensions import Extension
 from markdown.postprocessors import Postprocessor
 
@@ -9,8 +10,9 @@ from app.iafisher.common import (
     HTTP_API_KEY_HEADER,
     ensure_api_key,
 )
+from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import command, kghttp, obsidian
+from lib import command, kghttp, obsidian, uuid7
 
 
 MDPAGES_TOC_THRESHOLD = 3
@@ -36,6 +38,12 @@ def main_upload(
         Optional[str],
         command.Extra(help="use this API key instead of reading from secrets file"),
     ] = None,
+    do_not_set_page_id: Annotated[
+        bool,
+        command.Extra(
+            help="do not update the Markdown file to include a page ID property"
+        ),
+    ],
 ) -> None:
     if api_key is None:
         api_key = ensure_api_key(local=is_local)
@@ -64,6 +72,7 @@ def main_upload(
             hashes=hashes,
             root=dirpath,
             verbose=verbose,
+            set_page_id=not do_not_set_page_id,
         ):
             relpath = subpath.relative_to(dirpath)
             print(f"{relpath}: done")
@@ -105,6 +114,7 @@ def maybe_upload_page_to_site(
     hashes: Dict[str, str],
     root: pathlib.Path,
     verbose: bool,
+    set_page_id: bool,
 ) -> bool:
     path_str = make_mdpages_path(path, root=root)
     document = obsidian.Document.from_path(path)
@@ -118,9 +128,29 @@ def maybe_upload_page_to_site(
         print(f"SKIPPING {path_str}")
         return False
 
+    publish_after_property = "iafisher-publish-after"
+    publish_after = properties.get(publish_after_property)
+    if publish_after is not None:
+        if publish_after > timehelper.today():
+            print(f"SKIPPING {path_str} (publish after {publish_after.isoformat()})")
+            return False
+        else:
+            # The JSON serializer in `kghttp.post` can't handle date objects. The server
+            # doesn't need this property anyway, so we just remove it.
+            del properties[publish_after_property]
+
     if path.stem == "Untitled":
         print(f"SKIPPING {path_str}")
         return False
+
+    page_id_property = "iafisher-page-id"
+    if set_page_id and properties.get(page_id_property) is None:
+        page_id = uuid7.uuid7()
+        print(f"Setting page-id for {path_str}: {page_id}")
+        updated_text = hackily_insert_property(
+            document.fulltext, page_id_property, str(page_id)
+        )
+        path.write_text(updated_text)
 
     # IMPORTANT: Do the hash comparison on `fulltext_without_properties`, not `fulltext`
     # since the server doesn't have the full text.
@@ -170,6 +200,24 @@ def maybe_upload_page_to_site(
         sys.exit(1)
 
     return True
+
+
+def hackily_insert_property(text: str, property_name: str, property_value: str) -> str:
+    delimiter = "---\n"
+    start_of_properties = text.find(delimiter)
+    does_document_have_properties = start_of_properties != -1 and (
+        start_of_properties == 0 or text[:start_of_properties].isspace()
+    )
+
+    property_line = yaml.safe_dump({property_name: property_value})
+    if does_document_have_properties:
+        end_of_properties = text.find(delimiter, start_of_properties + 1)
+        updated_properties = text[start_of_properties:end_of_properties] + property_line
+        return (
+            text[:start_of_properties] + updated_properties + text[end_of_properties:]
+        )
+    else:
+        return delimiter + property_line + delimiter + "\n" + text
 
 
 def upload_image_to_site(

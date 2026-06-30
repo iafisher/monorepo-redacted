@@ -6,10 +6,10 @@ expecttest
 flask == 3.1.1
 google-api-python-client == 2.176.0
 google-genai == 1.52.0
-iafisher-foundation == 0.1.8
+iafisher-foundation == 0.1.9
 litellm
 Markdown == 3.3
-openai == 2.8.1
+openai == 2.44.0
 prompt_toolkit
 psycopg[binary] == 3.2.9
 pydantic-core

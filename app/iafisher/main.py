@@ -6,7 +6,7 @@ from typing import Annotated
 
 import yaml
 
-from app.iafisher import mdpages, stats
+from app.iafisher import microbooks, mdpages, stats
 from app.iafisher.common import CODE_PATH, ensure_api_key
 from app.iafisher.provision_deploy import (
     main_deploy,
@@ -276,6 +276,7 @@ blog_cmd.add2("upload", main_blog_upload, help="Upload a new blog post.")
 cmd.add("blog", blog_cmd)
 
 cmd.add("mdpages", mdpages.cmd)
+cmd.add("microbooks", microbooks.cmd)
 
 cmd.add2("list-deploys", main_list_deploys)
 

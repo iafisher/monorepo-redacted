@@ -127,7 +127,7 @@ class TopicLink:
         if not m:
             raise KgError("could not parse string as topic link", s=s)
 
-        month = map_or_none(
+        month = opt_call(
             m.group("month"), lambda s: datetime.datetime.strptime(s, "%b %Y").date()
         )
         return cls(
@@ -135,7 +135,7 @@ class TopicLink:
             link_target=m.group("link_target"),
             link_text=m.group("link_text") or "",
             month=month,
-            word_count=map_or_none(
+            word_count=opt_call(
                 m.group("word_count"), lambda x: int(x.replace(",", ""))
             ),
             trailing_text=m.group("trailing_text"),

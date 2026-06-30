@@ -21,14 +21,7 @@ from .base import (
     ToolUseResponse,
 )
 from .common import IteratorWithDelay, TokenUsage, load_mock_turn
-from .model_names import (
-    GPT_5_1,
-    GPT_5_2,
-    GPT_5_2_CODEX,
-    GPT_5_MINI,
-    GPT_MOCK_WEB_SEARCH,
-    MODEL_FAMILY_GPT,
-)
+from .model_names import GPT_5_MINI, GPT_MOCK_WEB_SEARCH, MODEL_FAMILY_GPT
 
 
 MOCK_MODELS = (GPT_MOCK_WEB_SEARCH,)
@@ -71,11 +64,8 @@ class GPT(APIWrapper):
                 )
 
         if reasoning is None:
-            # https://developers.openai.com/api/docs/guides/latest-model/#lower-reasoning-effort
-            if self.model in (GPT_5_1, GPT_5_2, GPT_5_2_CODEX):
-                reasoning_effort = "none"
-            else:
-                reasoning_effort = "minimal"
+            # https://developers.openai.com/api/docs/guides/latest-model#using-reasoning-models
+            reasoning_effort = "none"
         else:
             if reasoning.effort == "dynamic":
                 if options.strict:
@@ -152,8 +142,19 @@ class GPT(APIWrapper):
                                 )
                                 stop_reason = StopReason.REFUSAL
                     elif item.type == "web_search_call":
-                        if item.action.type == "search":
-                            hooks.on_web_search([item.action.query])
+                        if hasattr(item.action, "type"):
+                            if item.action.type == "search":
+                                hooks.on_web_search([opt_or(item.action.query, "")])
+                            else:
+                                LOG.warning(
+                                    "OpenAI returned `web_search_call` item but `item.action.type` is not 'search': %r",
+                                    item,
+                                )
+                        else:
+                            LOG.warning(
+                                "OpenAI returned `web_search_call` item but `item.action.type` is missing: %r",
+                                item,
+                            )
 
                     blocks.append(item.to_dict())
                 elif event.type == "response.output_text.delta" and event.delta:
@@ -236,13 +237,14 @@ class GPT(APIWrapper):
     ) -> List[universal.Message]:
         r: List[universal.Message] = []
         for message in messages:
-            if message["type"] == "reasoning":
+            message_type = message.get("type", "unknown")
+            if message_type == "reasoning":
                 r.append(
                     universal.ThinkingMessage(
                         role="assistant", thinking="<GPT thinking omitted>"
                     )
                 )
-            elif message["type"] == "function_call":
+            elif message_type == "function_call":
                 r.append(
                     universal.ToolUseRequest(
                         role="assistant",
@@ -251,7 +253,7 @@ class GPT(APIWrapper):
                         tool_input=json.loads(message["arguments"]),
                     )
                 )
-            elif message["type"] == "function_call_output":
+            elif message_type == "function_call_output":
                 r.append(
                     universal.ToolUseResponse(
                         role="user", tool_output=message["output"]

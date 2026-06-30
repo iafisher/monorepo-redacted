@@ -202,6 +202,11 @@ class ChunkAssistantResponseStarted(kgjson.Base):
 
 
 @dataclass
+class ChunkSummaryStarted(kgjson.Base):
+    chunk_type: Literal["summary_started"] = "summary_started"
+
+
+@dataclass
 class ChunkMessageCreated(kgjson.Base):
     message: db_models.Message
     chunk_type: Literal["message_created"] = "message_created"
@@ -230,6 +235,7 @@ Chunk = Union[
     ChunkText,
     ChunkThinking,
     ChunkAssistantResponseStarted,
+    ChunkSummaryStarted,
     ChunkMessageCreated,
     ChunkError,
     ChunkTokenCount,
@@ -281,8 +287,22 @@ def api_prompt():
         user_message = insert_message(db, conversation_id, "user", user_prompt)
         q.put(ChunkMessageCreated(user_message))
 
-        options = llm.InferenceOptions.normal()
         web_search_enabled = True
+        is_summary_mode = False
+        match rpc_request.inference_mode:
+            case None | "normal":
+                options = llm.InferenceOptions.normal()
+            case "fast":
+                options = llm.InferenceOptions.fast()
+                web_search_enabled = False
+            case "slow":
+                options = llm.InferenceOptions.slow()
+            case "summary":
+                options = llm.InferenceOptions.normal()
+                is_summary_mode = True
+            case x:
+                LOG.warning("got unknown inference options: %r", x)
+                options = llm.InferenceOptions.normal()
 
         if user_prompt.startswith("/"):
             try:
@@ -394,8 +414,22 @@ def api_prompt():
         else:
             # TODO(2026-02): Thinking blocks are never stored to the database.
 
+            if is_summary_mode and len(response.output_text.split()) > 50:
+                q.put(ChunkSummaryStarted())
+                summary_response = llm.oneshot(
+                    db,
+                    response.output_text,
+                    model=llm.GPT_5_NANO,
+                    system_prompt="Summarize the message in 1-3 sentences.",
+                    app_name="llmweb",
+                    options=llm.InferenceOptions.fast(),
+                )
+                output_text = summary_response.output_text
+            else:
+                output_text = response.output_text
+
             assistant_message = insert_message(
-                db, conversation_id, "assistant", response.output_text
+                db, conversation_id, "assistant", output_text
             )
             q.put(ChunkMessageCreated(assistant_message))
 

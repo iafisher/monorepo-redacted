@@ -40,9 +40,7 @@ def api_load():
 def api_create():
     data = request.get_json()
     with pdb.connect() as db:
-        create_habit_entry(
-            db, datetime.date.fromisoformat(data["date"]), data["habit"], data["points"]
-        )
+        create_habit_entry(db, parse_date(data["date"]), data["habit"], data["points"])
         dblog.log("habit_created", dict(date=data["date"], habit=data["habit"]))
 
     return jsonify({"ok": True})

@@ -56,7 +56,7 @@ def get_app_dir(appname: str) -> pathlib.Path:
 
 def get_code_dir_opt() -> Optional[pathlib.Path]:
     p = os.environ.get(ENV_CODE_DIR)
-    return pathlib.Path(p) if p is not None else None
+    return opt_call(p, pathlib.Path)
 
 
 _kg_machine_envvar = "KG_MACHINE"

@@ -12,7 +12,14 @@
     },
     {
       "name": "obsidian::snapshot",
-      "cmd": ["obsidian", "snapshot", "main", "personal-site", "-no-push"],
+      "cmd": [
+        "obsidian",
+        "snapshot",
+        "main",
+        "microbooks",
+        "personal-site",
+        "-no-push"
+      ],
       "machines": ["laptop"],
       "schedule": {
         "hourly": {

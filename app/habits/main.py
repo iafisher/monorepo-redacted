@@ -53,9 +53,7 @@ def main_create(
 def main_entries_create(
     *,
     habit_name: Annotated[Optional[str], command.Extra(name="-habit")] = None,
-    date: Annotated[
-        Optional[datetime.date], command.Extra(converter=datetime.date.fromisoformat)
-    ] = None,
+    date: Optional[datetime.date] = None,
 ) -> None:
     if date is None:
         today = datetime.date.today()
@@ -194,7 +192,7 @@ def main_old_import(*, habits_csv: str, entries_csv: str) -> None:
             for row in reader:
                 rows_to_insert.append(
                     dict(
-                        date=datetime.date.fromisoformat(row["date"]),
+                        date=parse_date(row["date"]),
                         habit=row["habit"],
                         original_name=row["original_name"],
                         original_points=row["original_points"],

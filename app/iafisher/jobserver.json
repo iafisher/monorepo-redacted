@@ -21,6 +21,16 @@
       }
     },
     {
+      "name": "iafisher::nightly_upload::microbooks",
+      "cmd": ["iafisher", "microboooks", "upload"],
+      "machines": ["laptop"],
+      "schedule": {
+        "daily": {
+          "times_of_day": ["11:55pm"]
+        }
+      }
+    },
+    {
       "name": "iafisher::db_backup",
       "cmd": [
         "db",

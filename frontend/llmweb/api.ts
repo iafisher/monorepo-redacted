@@ -21,18 +21,15 @@ export async function startConversation(
 export async function prompt(
   conversationId: number,
   message: string,
+  inferenceMode: string | null,
   onChunk: (event: any) => void,
 ) {
-  const request: rpc.PromptRequest = { conversationId, message };
+  const request: rpc.PromptRequest = {
+    conversationId,
+    message,
+    inferenceMode,
+  };
   await kgrpc.postStreaming("/api/prompt", request, onChunk);
-}
-
-export async function updateVote(
-  messageId: number,
-  vote: string,
-): Promise<rpc.VoteResponse> {
-  const request: rpc.VoteRequest = { messageId, vote };
-  return await kgrpc.post("/api/vote", request);
 }
 
 export async function fetchTranscript(

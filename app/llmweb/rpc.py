@@ -46,6 +46,7 @@ class VoteResponse(kgjson.Base):
 class PromptRequest(kgjson.Base):
     conversation_id: int
     message: str
+    inference_mode: Optional[str]
 
 
 @dataclass

@@ -128,7 +128,7 @@ httpx==0.28.1
     #   openai
 huggingface-hub==1.1.5
     # via tokenizers
-iafisher-foundation==0.1.8
+iafisher-foundation==0.1.9
     # via -r requirements.in
 idna==3.10
     # via
@@ -177,7 +177,7 @@ mypy-extensions==1.1.0
     #   mypy
 nodeenv==1.9.1
     # via pyright
-openai==2.8.1
+openai==2.44.0
     # via
     #   -r requirements.in
     #   litellm

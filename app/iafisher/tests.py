@@ -1,11 +1,10 @@
 import os
 import subprocess
 
-from app.iafisher.main import CODE_PATH
+from app.iafisher.main import CODE_PATH, cmd
+from app.iafisher.mdpages import hackily_insert_property
 from lib import command
 from lib.testing import *
-
-from .main import cmd
 
 
 class Test(Base):
@@ -25,6 +24,35 @@ class Test(Base):
         finally:
             os.chdir(old_cwd)
 
+    def test_hackily_insert_property(self):
+        self.assertExpectedInline(
+            hackily_insert_property("Hello, world!\n", "test-key", "test-value"),
+            """\
+---
+test-key: test-value
+---
+
+Hello, world!
+""",
+        )
+
+        self.assertExpectedInline(
+            hackily_insert_property(
+                "\n\n---\nexisting-key: existing-value\n---\nHello, world!\n",
+                "test-key",
+                "test-value",
+            ),
+            """\
+
+
+---
+existing-key: existing-value
+test-key: test-value
+---
+Hello, world!
+""",
+        )
+
     def test_help_text(self):
         self.assertExpectedInline(
             command.get_help_text_recursive(cmd, program="iafisher"),
@@ -41,6 +69,7 @@ Subcommands:
   list-deploys
   local           . Helper commands for local development.
   mdpages         . Helper commands for Markdown pages.
+  microbooks      . Helper commands for books.
   provision       . Provision a new server from scratch.
   psql            . Launch a psql shell connected to the prod database.
   rollback        . Roll back to a previous deployment.
@@ -138,12 +167,31 @@ Usage: iafisher mdpages upload ...
 
 Arguments:
 
- [-all]              . upload all pages, even if unchanged
- [-api-key ARG]      . use this API key instead of reading from secrets file (default: None)
- [-dir ARG]          . directory of Markdown pages (default: ~/Obsidian/personal-site)
- [-local]            . upload to a locally-running server
- [-local-url ARG]    . URL for local upload (only valid if -local also passed) (default: None)
+ [-all]                   . upload all pages, even if unchanged
+ [-api-key ARG]           . use this API key instead of reading from secrets file (default: None)
+ [-dir ARG]               . directory of Markdown pages (default: ~/Obsidian/personal-site)
+ [-do-not-set-page-id]    . do not update the Markdown file to include a page ID property
+ [-local]                 . upload to a locally-running server
+ [-local-url ARG]         . URL for local upload (only valid if -local also passed) (default: None)
  [-verbose]
+
+
+------------
+
+Usage: iafisher microbooks SUBCMD
+
+  Helper commands for books.
+
+Subcommands:
+
+  upload    . Upload all books.
+
+
+------------
+
+Usage: iafisher microbooks upload ...
+
+  Upload all books.
 
 
 ------------

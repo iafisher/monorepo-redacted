@@ -7,6 +7,8 @@ import { formatTimestamp, isInDev } from "../common/utils";
 import * as api from "./api";
 import * as rpc from "./rpc";
 
+const DEFAULT_MODEL = "claude-sonnet";
+
 const md = new MarkdownIt();
 
 interface FrontendMessage extends rpc.Message {
@@ -19,9 +21,10 @@ interface ChatState {
   conversationId: number | null;
   llmConversationId: number | null;
   messages: (FrontendMessage | rpc.Message)[];
+  loadingStatus: string | null;
   inputText: string;
-  isLoading: boolean;
   selectedModel: string;
+  inferenceMode: string;
   tokenCount: number | null;
 }
 
@@ -46,91 +49,6 @@ async function loadConversation(state: ChatState, conversationId: number) {
   state.llmConversationId = data.llmConversationId;
   m.redraw();
   scrollToBottom();
-}
-
-class MessageAppender {
-  private state: ChatState;
-  private currentMessage: FrontendMessage | null;
-
-  constructor(state: ChatState) {
-    this.state = state;
-    this.currentMessage = null;
-  }
-
-  messageCreated(message: any): void {
-    if (message.role === "assistant") {
-      // If it's an assistant message, then we had previously been accumulating a provisional
-      // version of the message via text chunks. We should remove this provisional message and
-      // replace it with the finalized message.
-      //
-      // TODO(2026-02): this is messy
-      this.state.messages.pop();
-    }
-
-    this.state.messages.push(message);
-  }
-
-  error(error: string): void {
-    this.state.messages.push({
-      role: "error",
-      content: error,
-      messageId: -1,
-      vote: "",
-      timeCreated: "",
-    });
-  }
-
-  responseStarted(): void {
-    this.currentMessage = this.createEmptyMessage("assistant");
-    this.state.messages.push(this.currentMessage);
-  }
-
-  text(text: string): void {
-    if (this.currentMessage === null) {
-      this.state.controller.pushError("'text' chunk received out-of-order");
-      return;
-    }
-
-    this.pushNewMessageIfDifferentRole("assistant");
-    this.currentMessage.isLoading = false;
-    this.currentMessage.content += text;
-  }
-
-  thinking(text: string): void {
-    if (this.currentMessage === null) {
-      this.state.controller.pushError("'thinking' chunk received out-of-order");
-      return;
-    }
-
-    this.pushNewMessageIfDifferentRole("thinking");
-    this.currentMessage.isLoading = false;
-    this.currentMessage.content += text;
-  }
-
-  private pushNewMessageIfDifferentRole(role: string): void {
-    if (this.currentMessage === null) return;
-
-    if (this.currentMessage.role !== role) {
-      if (this.currentMessage.content.length === 0) {
-        this.currentMessage.role = role;
-      } else {
-        this.currentMessage.isLoading = false;
-        this.currentMessage = this.createEmptyMessage(role);
-        this.state.messages.push(this.currentMessage);
-      }
-    }
-  }
-
-  private createEmptyMessage(role: string): FrontendMessage {
-    return {
-      role,
-      content: "",
-      isLoading: true,
-      messageId: -1,
-      vote: "",
-      timeCreated: "",
-    };
-  }
 }
 
 function formatCitationsMessage(content: string): string {
@@ -162,9 +80,9 @@ function formatWebSearchMessage(content: string): string {
 
 async function sendMessage(state: ChatState) {
   const message = state.inputText.trim();
-  if (!message || state.isLoading) return;
+  if (!message || !!state.loadingStatus) return;
 
-  state.isLoading = true;
+  state.loadingStatus = "Query pending.";
 
   function onError(error: string) {
     state.controller.pushError(error);
@@ -191,8 +109,8 @@ async function sendMessage(state: ChatState) {
     conversationId = state.conversationId;
   }
 
-  let assistantMessage: FrontendMessage | null = null;
-  const appender = new MessageAppender(state);
+  let thinkingWords = 0;
+  let textWords = 0;
   try {
     // Expected sequence:
     //
@@ -203,23 +121,35 @@ async function sendMessage(state: ChatState) {
     //   - message_created for assistant message
     //   - token_count chunk
     //
-    await api.prompt(conversationId, message, (event) => {
+    await api.prompt(conversationId, message, state.inferenceMode, (event) => {
       if (event.chunkType === "message_created") {
         if (event.message.role === "user") {
           // Don't erase the input box until the text has been stored in the database.
           state.inputText = "";
+          state.messages.push(event.message);
+        } else if (event.message.role === "websearch") {
+          state.loadingStatus = "Searching the web.";
+        } else if (
+          event.message.role === "assistant" ||
+          event.message.role === "citations"
+        ) {
+          state.loadingStatus = null;
+          state.messages.push(event.message);
         }
-        appender.messageCreated(event.message);
       } else if (event.chunkType === "error") {
-        appender.error(event.error);
+        onError(event.error);
       } else if (event.chunkType === "assistant_response_started") {
-        appender.responseStarted();
+        state.loadingStatus = "Query received.";
       } else if (event.chunkType === "text") {
-        appender.text(event.payload);
+        textWords += countWordsInaccurately(event.payload);
+        state.loadingStatus = `Response generating: ${pluralize(textWords, "word")}.`;
       } else if (event.chunkType === "thinking") {
-        appender.thinking(event.payload);
-      } else if (event.chunkType == "token_count") {
+        thinkingWords += countWordsInaccurately(event.payload);
+        state.loadingStatus = `Model thinking: ${pluralize(thinkingWords, "word")}.`;
+      } else if (event.chunkType === "token_count") {
         state.tokenCount = event.count;
+      } else if (event.chunkType === "summary_started") {
+        state.loadingStatus = `Summarizing: ${pluralize(textWords, "word")}.`;
       }
 
       m.redraw();
@@ -230,10 +160,7 @@ async function sendMessage(state: ChatState) {
     m.redraw();
   }
 
-  if (assistantMessage) {
-    (assistantMessage as FrontendMessage).isLoading = false;
-  }
-  state.isLoading = false;
+  state.loadingStatus = null;
 
   // Update URL if we started a new conversation (use replaceState to avoid
   // triggering router which would clear state)
@@ -250,6 +177,14 @@ async function sendMessage(state: ChatState) {
   if (textarea) {
     (textarea as any).focus();
   }
+}
+
+function pluralize(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
+function countWordsInaccurately(text: string): number {
+  return text.split(" ").length;
 }
 
 function isScrolledNearBottom(): boolean {
@@ -292,13 +227,13 @@ function handleKeyDown(e: KeyboardEvent, state: ChatState) {
     if (mobile) {
       // On mobile: Enter submits
       e.preventDefault();
-      if (!state.isLoading) {
+      if (!state.loadingStatus) {
         sendMessage(state);
       }
     } else if (e.metaKey || e.ctrlKey || e.altKey) {
       // On desktop: Cmd/Ctrl/Alt+Enter submits
       e.preventDefault();
-      if (!state.isLoading) {
+      if (!state.loadingStatus) {
         sendMessage(state);
       }
     }
@@ -306,54 +241,10 @@ function handleKeyDown(e: KeyboardEvent, state: ChatState) {
   }
 }
 
-async function handleVote(state: ChatState, messageId: number, vote: string) {
-  try {
-    await api.updateVote(messageId, vote);
-    const message = state.messages.find((m) => m.messageId === messageId);
-    if (message) {
-      message.vote = vote;
-    }
-    m.redraw();
-  } catch (error) {
-    state.controller.pushError(`failed to save vote: ${error}`);
-  }
-}
-
 class MessageFooterView {
   view(vnode: m.Vnode<{ state: ChatState; msg: FrontendMessage }>) {
     const msg = vnode.attrs.msg;
-    const state = vnode.attrs.state;
-    const isAssistant = msg.role === "assistant";
-    const messageId = msg.messageId;
     return m(".message-footer", [
-      isAssistant && messageId !== -1
-        ? m(".vote-buttons", [
-            m(
-              "button.vote-btn",
-              {
-                class: msg.vote === "up" ? "active" : "",
-                onclick: () =>
-                  handleVote(state, messageId, msg.vote === "up" ? "" : "up"),
-                title: "Upvote",
-              },
-              "▲",
-            ),
-            m(
-              "button.vote-btn",
-              {
-                class: msg.vote === "down" ? "active" : "",
-                onclick: () =>
-                  handleVote(
-                    state,
-                    messageId,
-                    msg.vote === "down" ? "" : "down",
-                  ),
-                title: "Downvote",
-              },
-              "▼",
-            ),
-          ])
-        : null,
       msg.timeCreated
         ? m(".message-timestamp", formatTimestamp(new Date(msg.timeCreated)))
         : null,
@@ -390,10 +281,10 @@ class ModelSelectorView {
     const state = vnode.attrs.state;
     const hasConversation = state.conversationId !== null;
     const models = [
-      { value: "claude-sonnet-4-5", label: "Sonnet" },
-      { value: "claude-opus-4-6", label: "Opus" },
-      { value: "claude-haiku-4-5", label: "Haiku" },
-      { value: "gpt-5.1", label: "GPT 5" },
+      { value: "claude-sonnet", label: "Sonnet" },
+      { value: "claude-opus", label: "Opus" },
+      { value: "claude-haiku", label: "Haiku" },
+      { value: "gpt-5", label: "GPT 5" },
       { value: "gemini-2.5-pro", label: "Gemini 2.5" },
     ];
 
@@ -416,23 +307,40 @@ class ModelSelectorView {
       });
     }
 
-    return m(".model-selector-container", [
-      m("label.model-selector-label", "Model:"),
-      models.map((model) =>
+    const inferenceModeOptions = ["normal", "fast", "slow", "summary"];
+    return m(".model-selector", [
+      m("label", [
+        "Model: ",
+        hasConversation
+          ? state.selectedModel
+          : m(
+              "select",
+              {
+                value: state.selectedModel,
+                oninput: (e: InputEvent) => {
+                  state.selectedModel = (e.target as HTMLSelectElement).value;
+                },
+              },
+              models.map((model) =>
+                m("option", { value: model.value }, model.label),
+              ),
+            ),
+      ]),
+      m("label", [
+        "Mode: ",
         m(
-          "button.model-selector-btn",
+          "select",
           {
-            class: state.selectedModel === model.value ? "active" : "",
-            disabled: hasConversation,
-            onclick: () => {
-              if (!hasConversation) {
-                state.selectedModel = model.value;
-              }
+            value: state.inferenceMode,
+            oninput: (e: InputEvent) => {
+              state.inferenceMode = (e.target as HTMLSelectElement).value;
             },
           },
-          model.label,
+          inferenceModeOptions.map((option) =>
+            m("option", { value: option }, option),
+          ),
         ),
-      ),
+      ]),
     ]);
   }
 }
@@ -452,6 +360,28 @@ class ChatInfoView {
   }
 }
 
+class MessagesView {
+  view(vnode: m.Vnode<{ state: ChatState }>) {
+    const state = vnode.attrs.state;
+    let messages = state.messages.slice();
+
+    if (!!state.loadingStatus) {
+      messages.push({
+        role: "assistant",
+        content: state.loadingStatus,
+        messageId: -1,
+        vote: "",
+        timeCreated: "",
+      });
+    }
+
+    return m(
+      ".messages-container",
+      messages.map((msg, index) => m(MessageView, { state, msg, key: index })),
+    );
+  }
+}
+
 class ChatContainerView {
   view(vnode: m.Vnode<{ state: ChatState }>) {
     const state = vnode.attrs.state;
@@ -466,20 +396,9 @@ class ChatContainerView {
         ],
       }),
       m(".center-column", [
-        m(ModelSelectorView, { state }),
         m(ChatInfoView, { llmConversationId: state.llmConversationId }),
-        m(
-          ".messages-container",
-          state.messages.map((msg, index) =>
-            m(MessageView, { state, msg, key: index }),
-          ),
-        ),
-        state.tokenCount !== null
-          ? m(
-              ".token-count",
-              `${state.tokenCount.toLocaleString("en-US")} token${state.tokenCount === 1 ? "" : "s"} used`,
-            )
-          : null,
+        m(MessagesView, { state }),
+        m(ModelSelectorView, { state }),
         m(".input-container", [
           m("textarea", {
             value: state.inputText,
@@ -489,11 +408,17 @@ class ChatContainerView {
             oncreate: (vnode) => (vnode.dom as any).focus(),
             autocorrect: "off",
             autocomplete: "off",
+            placeholder: "Type /help to see available commands.",
           }),
-          m(
-            ".input-hint",
-            isMobileDevice() ? "Enter to send" : "⌥+Enter to send",
-          ),
+          m(".footer", [
+            m("div", isMobileDevice() ? "Enter to send" : "⌥+Enter to send"),
+            state.tokenCount !== null
+              ? m(
+                  ".token-count",
+                  `${state.tokenCount.toLocaleString("en-US")} token${state.tokenCount === 1 ? "" : "s"} used`,
+                )
+              : null,
+          ]),
         ]),
       ]),
     ]);
@@ -510,8 +435,9 @@ class ChatPage {
       llmConversationId: null,
       messages: [],
       inputText: "",
-      isLoading: false,
-      selectedModel: "claude-sonnet-4-5", // Default model
+      loadingStatus: null,
+      selectedModel: DEFAULT_MODEL,
+      inferenceMode: "normal",
       tokenCount: null,
     };
   }
@@ -526,7 +452,7 @@ class ChatPage {
       this.state.conversationId = null;
       this.state.messages = [];
       this.state.inputText = "";
-      this.state.selectedModel = "claude-sonnet-4-5";
+      this.state.selectedModel = DEFAULT_MODEL;
     }
   }
 
