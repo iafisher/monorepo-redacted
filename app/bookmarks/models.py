@@ -15,8 +15,8 @@ class Bookmark:
     source: str
     reason_archived: str
     tags: List[str]
-    time_created: datetime.datetime
-    time_archived: Optional[datetime.datetime]
+    time_created: dt.datetime
+    time_archived: Optional[dt.datetime]
 
     class T:
         bookmark_id = sql.Identifier("bookmark_id")

@@ -18,9 +18,10 @@ def main_upload() -> None:
         if not is_book_dir:
             continue
 
+        exe = "/Users/iafisher/.cargo/bin/mdbook"
         LOG.info("building book: %s", entry.name)
         os.chdir(path)
-        sh0("mdbook build")
+        sh0(f"{exe} build")
         LOG.info("uploading book: %s", entry.name)
         sh0(f"rsync -r book/ iafisher.com:/var/www/iafisher/microbooks/{entry.name}")
 

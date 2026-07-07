@@ -1,12 +1,11 @@
 import re
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Annotated
 
 from app.golinks.models import Golink
 from iafisher_foundation import tabular, timehelper
 from iafisher_foundation.prelude import *  # noqa: F401
-from lib import command, pdb
+from lib import command, pgdb
 
 
 # TODO(2025-11): is_deprecated column is never used. Delete?
@@ -14,10 +13,10 @@ from lib import command, pdb
 
 def main_add(*, name: str, url: str) -> None:
     time_created = timehelper.now()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = Golink.T
         db.execute(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 INSERT INTO {table}(
                     {name}, {url}, {time_created}, {time_last_updated}
@@ -38,14 +37,14 @@ def main_add(*, name: str, url: str) -> None:
 
 
 def main_delete(name: str) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = Golink.T
         row = db.fetch_one_or_zero(
-            pdb.SQL(
+            pgdb.SQL(
                 "DELETE FROM {table} WHERE {name} = %(name)s RETURNING {url}"
             ).format(table=T.table, name=T.name, url=T.url),
             dict(name=name),
-            t=pdb.tuple_row,
+            t=pgdb.tuple_row,
         )
 
     if row is not None:
@@ -62,12 +61,12 @@ def main_list(
 ) -> None:
     table = tabular.Table()
     table.header(["name", "url", "visit count", "last visited", "created"])
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = Golink.T
-        query = pdb.SQL("SELECT {star} FROM {table} ORDER BY {name}").format(
+        query = pgdb.SQL("SELECT {star} FROM {table} ORDER BY {name}").format(
             star=T.star, table=T.table, is_deprecated=T.is_deprecated, name=T.name
         )
-        for entry in db.fetch_all(query, t=pdb.t(Golink)):
+        for entry in db.fetch_all(query, t=pgdb.t(Golink)):
             if entry.is_deprecated:
                 if show_deprecated:
                     name = f"{entry.name} (deprecated)"
@@ -109,10 +108,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_404()
 
     def handle_golink(self, name: str) -> None:
-        with pdb.connect() as db:
+        with pgdb.connect() as db:
             T = Golink.T
             row = db.fetch_one_or_zero(
-                pdb.SQL(
+                pgdb.SQL(
                     """
                     UPDATE {table}
                     SET {visit_count} = {visit_count} + 1, {time_last_visited} = %(time)s
@@ -128,7 +127,7 @@ class Handler(BaseHTTPRequestHandler):
                     url=T.url,
                 ),
                 dict(name=name, time=timehelper.now()),
-                t=pdb.tuple_row,
+                t=pgdb.tuple_row,
             )
 
         if row is not None:
@@ -259,10 +258,10 @@ def main_update(
     name: str, *, new_url: Annotated[str, command.Extra(name="-to")]
 ) -> None:
     now = timehelper.now()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = Golink.T
         row = db.fetch_one_or_zero(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 UPDATE {table}
                 SET {url} = %(new_url)s, {time_last_updated} = %(now)s
@@ -276,7 +275,7 @@ def main_update(
                 time_last_updated=T.time_last_updated,
             ),
             dict(name=name, new_url=new_url, now=now),
-            t=pdb.tuple_row,
+            t=pgdb.tuple_row,
         )
 
     if row is not None:

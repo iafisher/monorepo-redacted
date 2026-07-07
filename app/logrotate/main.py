@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
 from lib import command, dblog, kgenv
@@ -14,7 +12,7 @@ def main(
     dry_run: bool = False,
 ) -> None:
 
-    cutoff = timehelper.now() - datetime.timedelta(days=max_age_days)
+    cutoff = timehelper.now() - dt.timedelta(days=max_age_days)
     LOG.info(
         "rotating logs in %s with max_age_days=%d (cutoff: %s)",
         directory,
@@ -24,7 +22,7 @@ def main(
     deleted_count = 0
     for p in directory.glob("**/*.log"):
         try:
-            time_created = datetime.datetime.fromisoformat(p.stem)
+            time_created = dt.datetime.fromisoformat(p.stem)
         except ValueError:
             LOG.warning("unable to parse file name as datetime: %s", p)
             continue

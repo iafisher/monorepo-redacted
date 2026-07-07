@@ -89,6 +89,7 @@ async function sendMessage(state: ChatState) {
     state.messages.push({
       role: "error",
       content: error,
+      summary: "",
       messageId: -1,
       vote: "",
       timeCreated: "",
@@ -256,7 +257,8 @@ class MessageView {
   view(vnode: m.Vnode<{ state: ChatState; msg: FrontendMessage }>) {
     const msg = vnode.attrs.msg;
     const state = vnode.attrs.state;
-    let content;
+    let content, originalContent;
+    let originalContentWords = 0;
     if (msg.isLoading) {
       content = m("span.loading-indicator");
     } else {
@@ -264,6 +266,10 @@ class MessageView {
         content = m.trust(md.render(formatCitationsMessage(msg.content)));
       } else if (msg.role === "websearch") {
         content = m.trust(md.render(formatWebSearchMessage(msg.content)));
+      } else if (!!msg.summary) {
+        originalContent = m.trust(md.render(msg.content));
+        originalContentWords = countWordsInaccurately(msg.content);
+        content = m.trust(md.render(msg.summary));
       } else {
         content = m.trust(md.render(msg.content));
       }
@@ -271,6 +277,15 @@ class MessageView {
     return m(".message", { class: msg.role }, [
       m(".message-divider", msg.role),
       m(".message-content", content),
+      !!originalContent
+        ? m("details", [
+            m(
+              "summary",
+              `Original message (${pluralize(originalContentWords, "word")})`,
+            ),
+            m(".message-content", originalContent),
+          ])
+        : null,
       m(MessageFooterView, { state, msg }),
     ]);
   }
@@ -369,6 +384,7 @@ class MessagesView {
       messages.push({
         role: "assistant",
         content: state.loadingStatus,
+        summary: "",
         messageId: -1,
         vote: "",
         timeCreated: "",

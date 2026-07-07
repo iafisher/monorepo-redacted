@@ -1,33 +1,33 @@
 from app.habits import models
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import pdb
+from lib import pgdb
 
 
-def fetch_habits(db: pdb.Connection) -> List[models.Habit]:
+def fetch_habits(db: pgdb.Connection) -> List[models.Habit]:
     T = models.Habit.T
     return db.fetch_all(
-        pdb.SQL("SELECT {} FROM {} WHERE {} IS FALSE").format(
+        pgdb.SQL("SELECT {} FROM {} WHERE {} IS FALSE").format(
             T.star, T.table, T.deprecated
         ),
-        t=pdb.t(models.Habit),
+        t=pgdb.t(models.Habit),
     )
 
 
 def fetch_habit_entries(
-    db: pdb.Connection, last_filter: datetime.timedelta
+    db: pgdb.Connection, last_filter: dt.timedelta
 ) -> List[models.HabitEntry]:
     T = models.HabitEntry.T
     after_date = (timehelper.now() - last_filter).date()
     return db.fetch_all(
-        pdb.SQL("SELECT {} FROM {} WHERE date >= %s").format(T.star, T.table),
+        pgdb.SQL("SELECT {} FROM {} WHERE date >= %s").format(T.star, T.table),
         (after_date,),
-        t=pdb.t(models.HabitEntry),
+        t=pgdb.t(models.HabitEntry),
     )
 
 
 def create_habit_entry(
-    db: pdb.Connection, date: datetime.date, habit: str, points: int
+    db: pgdb.Connection, date: dt.date, habit: str, points: int
 ) -> None:
     time_created = timehelper.now()
     db.execute(

@@ -1,10 +1,10 @@
 import time
-from typing import Annotated, NewType
+from typing import NewType
 
 from app.wikipedia.common import USER_AGENT
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import command, githelper, kgenv, kghttp, kgjson, llm, pdb, simplemail
+from lib import command, githelper, kgenv, kghttp, kgjson, llm, pgdb, simplemail
 
 
 class EditableArticle:
@@ -250,7 +250,7 @@ ArticleTitle = NewType("ArticleTitle", str)
 
 @dataclass
 class NightlyState(kgjson.Base):
-    last_edited: Dict[str, datetime.datetime] = dataclasses.field(default_factory=dict)
+    last_edited: Dict[str, dt.datetime] = dataclasses.field(default_factory=dict)
 
 
 DO_NOT_EDIT_WITHIN_THIS_NUMBER_OF_DAYS = 30
@@ -444,7 +444,7 @@ def print_diff(wikitext: str, edited_text: str) -> None:
 def tidy(
     text: str, *, model: str = llm.CLAUDE_HAIKU_4_5, max_turn_count: int = 10
 ) -> Tuple[str, llm.ModelResponse]:
-    with pdb.connect(transaction_mode=pdb.TransactionMode.AUTOCOMMIT) as db:
+    with pgdb.connect(transaction_mode=pgdb.TransactionMode.AUTOCOMMIT) as db:
         conversation = llm.Conversation.start(
             db, model=model, app_name="wikipedia::copyedit", system_prompt=SYSTEM_PROMPT
         )

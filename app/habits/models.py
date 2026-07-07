@@ -12,7 +12,7 @@ class Habit:
     once_a_day: bool
     description: str
     deprecated: bool
-    time_created: Optional[datetime.datetime]
+    time_created: Optional[dt.datetime]
 
     class T:
         name = sql.Identifier("name")
@@ -69,11 +69,11 @@ class Habit:
 
 @dataclass
 class HabitEntry:
-    date: datetime.date
+    date: dt.date
     habit: str
     original_name: str
     original_points: int
-    time_created: Optional[datetime.datetime]
+    time_created: Optional[dt.datetime]
 
     class T:
         date = sql.Identifier("date")

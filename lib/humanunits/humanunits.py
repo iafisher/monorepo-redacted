@@ -8,9 +8,9 @@ _time_pattern = lazy_re(
 )
 
 
-def parse_time(s: str) -> datetime.time:
+def parse_time(s: str) -> dt.time:
     """
-    Parse a time string, e.g., '11am', into a `datetime.time` object.
+    Parse a time string, e.g., '11am', into a `dt.time` object.
     """
     m = _time_pattern.get().match(s)
     if m is not None:
@@ -54,7 +54,7 @@ def parse_time(s: str) -> datetime.time:
         if am_pm == "pm" and hour < 12:
             hour += 12
 
-        return datetime.time(hour, minute, second)
+        return dt.time(hour, minute, second)
     else:
         raise KgError("could not parse string as time", string=s)
 
@@ -62,24 +62,24 @@ def parse_time(s: str) -> datetime.time:
 _duration_pattern = lazy_re(r"^\s*([0-9]+)(ms|s|m|h|d)\s*$", re.IGNORECASE)
 
 
-def parse_duration(s: str) -> datetime.timedelta:
+def parse_duration(s: str) -> dt.timedelta:
     """
-    Parse a string like '30m' into a `datetime.timedelta` object.
+    Parse a string like '30m' into a `dt.timedelta` object.
     """
     m = _duration_pattern.get().match(s)
     if m is not None:
         n = int(m.group(1))
         unit = m.group(2)
         if unit == "ms":
-            return datetime.timedelta(milliseconds=n)
+            return dt.timedelta(milliseconds=n)
         elif unit == "s":
-            return datetime.timedelta(seconds=n)
+            return dt.timedelta(seconds=n)
         elif unit == "m":
-            return datetime.timedelta(minutes=n)
+            return dt.timedelta(minutes=n)
         elif unit == "h":
-            return datetime.timedelta(hours=n)
+            return dt.timedelta(hours=n)
         elif unit == "d":
-            return datetime.timedelta(days=n)
+            return dt.timedelta(days=n)
         else:
             raise KgError("unknown unit for time duration", string=s, unit=unit)
     else:
@@ -114,6 +114,19 @@ def parse_bytes(s: str) -> int:
         return floored
     else:
         raise KgError("could not parse string as bytes", string=s)
+
+
+def to_bytes(x: int) -> str:
+    """
+    Format the byte count using units, e.g., 5000 becomes '5 KB'
+    """
+    for unit, size in sorted(_bytes_units.items(), key=lambda kv: kv[1], reverse=True):
+        if x < size:
+            continue
+
+        return f"{x / size:.1f} {unit.upper()}"
+
+    impossible()
 
 
 def month_to_int(month: str) -> int:

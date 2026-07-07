@@ -1,21 +1,21 @@
 from app.bookmarks.models import Bookmark
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import command, pdb
+from lib import command, pgdb
 
 
 T = Bookmark.T
 
 
-NEVER_PRUNE_BEFORE = datetime.datetime(2025, 8, 30, tzinfo=timehelper.TZ_NYC)
+NEVER_PRUNE_BEFORE = dt.datetime(2025, 8, 30, tzinfo=timehelper.TZ_NYC)
 
 
 def main(*, days_to_retain: int, dry_run: bool) -> None:
-    cutoff = timehelper.now() + datetime.timedelta(days=-days_to_retain)
+    cutoff = timehelper.now() + dt.timedelta(days=-days_to_retain)
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         rows = db.fetch_all(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 SELECT {bookmark_id}, {url}
                 FROM {table}
@@ -33,7 +33,7 @@ def main(*, days_to_retain: int, dry_run: bool) -> None:
                 time_created=T.time_created,
             ),
             dict(cutoff=cutoff, never_prune_before=NEVER_PRUNE_BEFORE),
-            t=pdb.tuple_row,
+            t=pgdb.tuple_row,
         )
         LOG.info("found %d bookmark(s) eligible for archiving: %r", len(rows), rows)
         bookmark_ids = [row[0] for row in rows]
@@ -46,7 +46,7 @@ def main(*, days_to_retain: int, dry_run: bool) -> None:
         else:
             time_archived = timehelper.now()
             db.execute(
-                pdb.SQL(
+                pgdb.SQL(
                     """
                     UPDATE {table}
                     SET {time_archived} = %(time_archived)s, {reason_archived} = 'expired'

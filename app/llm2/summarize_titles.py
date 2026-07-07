@@ -1,9 +1,9 @@
 from iafisher_foundation.prelude import *
-from lib import llm, pdb
+from lib import llm, pgdb
 
 
 def summarize_title(first_message: str) -> str:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         response = llm.oneshot(
             db,
             f"Summarize this message in 5-7 words as a title:\n\n{first_message}",
@@ -18,7 +18,7 @@ def summarize_title(first_message: str) -> str:
 
 
 def main(*, limit: Optional[int] = None) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         conversations = db.fetch_all(
             """
             SELECT DISTINCT w.conversation_id
@@ -29,7 +29,7 @@ def main(*, limit: Optional[int] = None) -> None:
             ORDER BY w.conversation_id
             """
             + (f"LIMIT {limit}" if limit is not None else ""),
-            t=pdb.tuple_row,
+            t=pgdb.tuple_row,
         )
 
         if not conversations:

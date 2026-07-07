@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from app.bookmarks import (
     import_from_chrome,
     import_from_hn,
@@ -12,7 +10,7 @@ from app.bookmarks.common import insert_bookmarks_filtering_duplicates
 from app.bookmarks.models import Bookmark
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *  # noqa: F401
-from lib import command, pdb
+from lib import command, pgdb
 
 
 T = Bookmark.T
@@ -24,7 +22,7 @@ def main_import_test(
         bool, command.Extra(help="delete any existing bookmarks from the database")
     ]
 ) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         if delete_existing:
             delete_all_existing_bookmarks(db)
 
@@ -63,9 +61,9 @@ def main_import_test(
         )
 
 
-def delete_all_existing_bookmarks(db: pdb.Connection) -> None:
+def delete_all_existing_bookmarks(db: pgdb.Connection) -> None:
     db.execute(
-        pdb.SQL("DELETE FROM {table} WHERE {time_archived} IS NULL").format(
+        pgdb.SQL("DELETE FROM {table} WHERE {time_archived} IS NULL").format(
             table=T.table,
             time_archived=T.time_archived,
         ),

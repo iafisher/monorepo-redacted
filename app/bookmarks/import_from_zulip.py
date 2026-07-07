@@ -8,7 +8,7 @@ from app.bookmarks.state import State
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
 from lib import command, kgenv, kghttp, secrets
-from lib.pdb import pdb
+from lib.pgdb import pgdb
 
 from .redacted import *
 
@@ -30,7 +30,7 @@ def main(*, dry_run: bool) -> None:
 
             bookmarks_to_insert.append(message_to_bookmark(message, time_created))
 
-        with pdb.connect() as db:
+        with pgdb.connect() as db:
             insert_bookmarks_filtering_duplicates(
                 db,
                 bookmarks_to_insert,
@@ -50,7 +50,7 @@ def main(*, dry_run: bool) -> None:
 ZULIP_FOLLOWED_AUTHOR_SOURCE = "zulip_followed_author"
 
 
-def message_to_bookmark(message: StrDict, time_created: datetime.datetime) -> Bookmark:
+def message_to_bookmark(message: StrDict, time_created: dt.datetime) -> Bookmark:
     title = message["subject"]
     url = extract_url(message)
     return Bookmark(

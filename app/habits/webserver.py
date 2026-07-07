@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from app.habits import models
 from app.habits.common import create_habit_entry, fetch_habit_entries, fetch_habits
-from lib import dblog, pdb, webserver
+from lib import dblog, pgdb, webserver
 from iafisher_foundation.prelude import *
 
 from flask import jsonify, render_template_string, request
@@ -21,9 +21,9 @@ def main_page():
 
 @app.route("/api/load", methods=["GET"])
 def api_load():
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         habits = fetch_habits(db)
-        habit_entries = fetch_habit_entries(db, last_filter=datetime.timedelta(days=14))
+        habit_entries = fetch_habit_entries(db, last_filter=dt.timedelta(days=14))
 
     categories_dict: defaultdict[str, List[models.Habit]] = defaultdict(list)
     for habit in sorted(habits, key=lambda habit: (-habit.points, habit.name)):
@@ -39,7 +39,7 @@ def api_load():
 @app.route("/api/create", methods=["POST"])
 def api_create():
     data = request.get_json()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         create_habit_entry(db, parse_date(data["date"]), data["habit"], data["points"])
         dblog.log("habit_created", dict(date=data["date"], habit=data["habit"]))
 
@@ -49,10 +49,10 @@ def api_create():
 @app.route("/api/delete", methods=["POST"])
 def api_delete():
     data = request.get_json()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         table = models.HabitEntry.T.table
         db.execute(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                     DELETE FROM ONLY {table}
                     WHERE ctid IN (

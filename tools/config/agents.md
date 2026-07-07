@@ -34,7 +34,7 @@ Common libraries:
 - Use `LOG` from the prelude for logging.
 - Use `iafisher_foundation.tabular` to print output in a tabular format.
 - Use `lib/simplemail` or `lib/emailalerts` to send emails.
-- Use `lib/pdb` to interact with the Postgres database.
+- Use `lib/pgdb` to interact with the Postgres database.
 - Use `lib/kgjson` to define dataclasses that can be serialized to and from JSON.
 - Use `lib/webserver` to write web apps.
 - Use `lib/githelper` to work with Git.
@@ -56,7 +56,7 @@ You can assume that the user is trusted and that the code runs in a trusted envi
 - Prefer raising `KgError` (from the prelude) for user-facing errors, with helpful `key=value` context; let CLI wrappers print the resulting message instead of calling `sys.exit` from libraries.
 - Use `LOG` (from the prelude) for logging; do not reconfigure logging by hand. `lib/kglogging` initializes logging for command-line tools.
 - Prefer `@dataclass` for structured data. For JSON-on-disk config or state, subclass `lib.kgjson.Base` and use its `serialize`/`deserialize`/`load`/`save`/`with_lock` helpers.
-- For Postgres, use `lib.pdb.connect()` and its `Connection` helpers (`fetch_one`, `fetch_all`, `fetch_val`, `execute_many_and_fetch_all`) plus generated `*models.py` files instead of ad-hoc SQL when possible.
+- For Postgres, use `lib.pgdb.connect()` and its `Connection` helpers (`fetch_one`, `fetch_all`, `fetch_val`, `execute_many_and_fetch_all`) plus generated `*models.py` files instead of ad-hoc SQL when possible.
 - For command-line tools, put entrypoints under `app/`, use `lib/command` and call `command.dispatch(...)` in the `if __name__ == "__main__"` guard.
 - For web apps, use `lib/webserver` (`make_app`, `make_template`, `make_command`) on top of Flask. Keep HTTP handlers thin and put business logic in `lib/` or app-specific modules.
 - For filesystem and OS operations, prefer `lib/oshelper` (e.g., `replace_file`, `LockFile`) and `lib/kgenv` (paths, machine/env selection) over ad-hoc code.

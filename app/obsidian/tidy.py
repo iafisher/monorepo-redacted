@@ -117,7 +117,7 @@ class TopicLink:
     leading_text: str
     link_target: str
     link_text: str
-    month: Optional[datetime.date]
+    month: Optional[dt.date]
     word_count: Optional[int]
     trailing_text: str
 
@@ -128,7 +128,7 @@ class TopicLink:
             raise KgError("could not parse string as topic link", s=s)
 
         month = opt_call(
-            m.group("month"), lambda s: datetime.datetime.strptime(s, "%b %Y").date()
+            m.group("month"), lambda s: dt.datetime.strptime(s, "%b %Y").date()
         )
         return cls(
             leading_text=m.group("leading_text").lstrip(),
@@ -244,7 +244,7 @@ class TopicPage:
 @dataclass
 class ArticleMetadata:
     title: Optional[str]
-    month: Optional[datetime.date]
+    month: Optional[dt.date]
     word_count: Optional[int]
 
 

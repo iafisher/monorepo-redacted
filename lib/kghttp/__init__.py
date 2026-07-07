@@ -1,1 +1,1 @@
-from .kghttp import KgHttpError, RetryConfig, get, post
+from .kghttp import DEFAULT_TIMEOUT_SECS, KgHttpError, RetryConfig, get, post

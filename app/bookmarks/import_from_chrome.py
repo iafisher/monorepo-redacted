@@ -1,10 +1,9 @@
 from urllib.parse import urlparse
-from typing import Annotated
 
 from app.bookmarks.common import insert_bookmarks_filtering_duplicates
 from app.bookmarks.models import Bookmark
 from iafisher_foundation.prelude import *
-from lib import chrome, command, pdb
+from lib import chrome, command, pgdb
 
 
 T = Bookmark.T
@@ -22,7 +21,7 @@ def main(
     ]
 ) -> None:
     bookmarks_to_insert = fetch_unread_bookmarks_from_chrome()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         if delete_existing:
             if dry_run:
                 print("==> dry run: would have deleted existing bookmarks")
@@ -38,9 +37,9 @@ def main(
         )
 
 
-def delete_existing_bookmarks_from_source(db: pdb.Connection, *, source: str) -> None:
+def delete_existing_bookmarks_from_source(db: pgdb.Connection, *, source: str) -> None:
     db.execute(
-        pdb.SQL(
+        pgdb.SQL(
             "DELETE FROM {table} WHERE {source} = %(source)s AND {time_archived} IS NULL"
         ).format(
             table=T.table,

@@ -1,31 +1,30 @@
 import dataclasses
 import re
-from typing import Annotated
 
 from app.books import models
 from iafisher_foundation import tabular, timehelper
 from iafisher_foundation.prelude import *
-from lib import command, dblog, humanunits, obsidian, pdb
+from lib import command, dblog, humanunits, obsidian, pgdb
 
 
 def main_list(
     *, year_filter: Annotated[Optional[int], command.Extra(name="-year")]
 ) -> None:
     book_models: List[models.Book] = []
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = models.Book.T
         if year_filter is not None:
             book_models = db.fetch_all(
-                pdb.SQL("SELECT {} FROM {} WHERE EXTRACT(YEAR FROM {}) = %s").format(
+                pgdb.SQL("SELECT {} FROM {} WHERE EXTRACT(YEAR FROM {}) = %s").format(
                     T.star, T.table, T.date_started
                 ),
                 (year_filter,),
-                t=pdb.t(models.Book),
+                t=pgdb.t(models.Book),
             )
         else:
             book_models = db.fetch_all(
-                pdb.SQL("SELECT {} FROM {}").format(T.star, T.table),
-                t=pdb.t(models.Book),
+                pgdb.SQL("SELECT {} FROM {}").format(T.star, T.table),
+                t=pgdb.t(models.Book),
             )
 
     table = tabular.Table()
@@ -71,11 +70,11 @@ def main_sync(
         print(f"warning: {warning}")
 
     if write:
-        with pdb.connect() as db:
+        with pgdb.connect() as db:
             table = models.Book.T.table
-            db.execute(pdb.SQL("DELETE FROM {}").format(table))
+            db.execute(pgdb.SQL("DELETE FROM {}").format(table))
             db.execute_many(
-                pdb.SQL("INSERT INTO {}({}) VALUES({})").format(
+                pgdb.SQL("INSERT INTO {}({}) VALUES({})").format(
                     table, models.Book.T.star, models.Book.T.placeholders
                 ),
                 [dataclasses.asdict(model) for model in book_models],
@@ -214,7 +213,7 @@ def parse_one_line(line: str, *, note_year: int) -> Optional[models.Book]:
 
     start_month = m.group("start_month")
     start_day = int(m.group("start_day"))
-    date_started = datetime.date(
+    date_started = dt.date(
         year=note_year, month=humanunits.month_to_int(start_month), day=start_day
     )
     end = m.group("end")
@@ -225,7 +224,7 @@ def parse_one_line(line: str, *, note_year: int) -> Optional[models.Book]:
     else:
         end_month = m.group("end_month") or start_month
         end_day = int(m.group("end_day1") or m.group("end_day2"))
-        date_finished = datetime.date(
+        date_finished = dt.date(
             year=note_year, month=humanunits.month_to_int(end_month), day=end_day
         )
         if date_finished < date_started:

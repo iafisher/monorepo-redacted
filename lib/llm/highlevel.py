@@ -4,7 +4,7 @@ from typing import Literal, Self
 
 from iafisher_foundation import colors, timehelper
 from iafisher_foundation.prelude import *
-from lib import pdb
+from lib import pgdb
 
 from . import storage, universal
 from .base import APIWrapper, BaseHooks, BaseTool, InferenceOptions, ModelResponse
@@ -68,7 +68,7 @@ class Conversation:
 
     @classmethod
     def start(
-        cls, db: pdb.Connection, *, model: str, app_name: str, system_prompt: str
+        cls, db: pgdb.Connection, *, model: str, app_name: str, system_prompt: str
     ) -> Self:
         api = _create_api(model)
         now = timehelper.now()
@@ -89,7 +89,7 @@ class Conversation:
         )
 
     @classmethod
-    def resume(cls, db: pdb.Connection, conversation_id: int) -> Self:
+    def resume(cls, db: pgdb.Connection, conversation_id: int) -> Self:
         db_conversation = storage.fetch_conversation(db, conversation_id)
         api = _create_api(db_conversation.model)
         return cls(
@@ -100,7 +100,7 @@ class Conversation:
         )
 
     @classmethod
-    def fork(cls, db: pdb.Connection, conversation_id: int) -> Self:
+    def fork(cls, db: pgdb.Connection, conversation_id: int) -> Self:
         now = timehelper.now()
         db_conversation = storage.fork_conversation(db, conversation_id, now=now)
         api = _create_api(db_conversation.model)
@@ -111,7 +111,7 @@ class Conversation:
             system_prompt=db_conversation.system_prompt,
         )
 
-    def switch_model(self, db: pdb.Connection, new_model: str) -> None:
+    def switch_model(self, db: pgdb.Connection, new_model: str) -> None:
         api = _create_api(new_model)
         messages = api.from_universal_messages(self.universal_messages())
         self.__init__(
@@ -130,7 +130,7 @@ class Conversation:
 
     def prompt(
         self,
-        db: pdb.Connection,
+        db: pgdb.Connection,
         text: str,
         *,
         hooks: BaseHooks,
@@ -157,7 +157,7 @@ class Conversation:
 
     def reprompt(
         self,
-        db: pdb.Connection,
+        db: pgdb.Connection,
         *,
         hooks: BaseHooks,
         options: InferenceOptions,
@@ -175,12 +175,12 @@ class Conversation:
             trace=trace,
         )
 
-    def enqueue(self, db: pdb.Connection, text: str) -> None:
+    def enqueue(self, db: pgdb.Connection, text: str) -> None:
         self.messages.append(self._api._create_text_message("user", text))
         now = timehelper.now()
         storage.update_conversation(db, self.conversation_id, self.messages, now=now)
 
-    def last_token_usage(self, db: pdb.Connection) -> TokenUsage:
+    def last_token_usage(self, db: pgdb.Connection) -> TokenUsage:
         return storage.fetch_last_token_usage(db, self.conversation_id)
 
     def model_name(self) -> str:
@@ -254,7 +254,7 @@ class CostBreakdown:
 
 
 def estimate_conversation_cost(
-    db: pdb.Connection, conversation_id: int
+    db: pgdb.Connection, conversation_id: int
 ) -> Optional[CostBreakdown]:
     rows = db.fetch_all(
         """
@@ -271,7 +271,7 @@ def estimate_conversation_cost(
           conversation_id = %(conversation_id)s
         """,
         dict(conversation_id=conversation_id),
-        t=pdb.tuple_row,
+        t=pgdb.tuple_row,
     )
 
     requests: List[CostPerRequest] = []
@@ -305,7 +305,7 @@ def estimate_conversation_cost(
 
 
 def oneshot(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     prompt: str,
     *,
     model: str,

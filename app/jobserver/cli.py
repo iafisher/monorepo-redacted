@@ -2,7 +2,6 @@ import json
 import signal
 import subprocess
 import time
-from typing import Annotated
 
 from iafisher_foundation import colors, tabular, timehelper
 from iafisher_foundation.prelude import *
@@ -31,7 +30,7 @@ def main_daemon_kill(
 def main_daemon_start(
     *,
     wakeup_interval: Annotated[
-        datetime.timedelta,
+        dt.timedelta,
         command.Extra(
             converter=humanunits.parse_duration,
             default="1s",
@@ -39,7 +38,7 @@ def main_daemon_start(
         ),
     ],
     log_interval: Annotated[
-        datetime.timedelta,
+        dt.timedelta,
         command.Extra(
             converter=humanunits.parse_duration,
             default="5m",
@@ -216,7 +215,7 @@ def main_list(
         colors.print(f"{colors.red(pluralize(disabled_count, 'disabled job'))} hidden.")
 
 
-def show_verbose(job: server.Job, now: datetime.datetime) -> None:
+def show_verbose(job: server.Job, now: dt.datetime) -> None:
     colors.print(colors.yellow(job.name))
     print("- Command:", job.cmd)
     if job.last_run_time is not None:
@@ -259,29 +258,29 @@ def highlight_exit_status(status: Optional[int]) -> str:
         return str(status)
 
 
-def pretty_print_datetime(dt: Optional[datetime.datetime]) -> str:
-    if dt is None:
+def pretty_print_datetime(dtime: Optional[dt.datetime]) -> str:
+    if dtime is None:
         return "none"
 
-    today = datetime.date.today()
-    diff = today - dt.date()
+    today = dt.date.today()
+    diff = today - dtime.date()
 
     if abs(diff.days) < 2:
-        if dt.hour == 12:
-            if dt.minute == 0:
+        if dtime.hour == 12:
+            if dtime.minute == 0:
                 tstr = "noon"
             else:
-                tstr = f"{dt.hour}:{dt.minute:0>2}pm"
-        elif dt.hour < 12:
-            if dt.minute == 0:
-                tstr = f"{dt.hour}am"
+                tstr = f"{dtime.hour}:{dtime.minute:0>2}pm"
+        elif dtime.hour < 12:
+            if dtime.minute == 0:
+                tstr = f"{dtime.hour}am"
             else:
-                tstr = f"{dt.hour}:{dt.minute:0>2}am"
+                tstr = f"{dtime.hour}:{dtime.minute:0>2}am"
         else:
-            if dt.minute == 0:
-                tstr = f"{dt.hour - 12}pm"
+            if dtime.minute == 0:
+                tstr = f"{dtime.hour - 12}pm"
             else:
-                tstr = f"{dt.hour - 12}:{dt.minute:0>2}pm"
+                tstr = f"{dtime.hour - 12}:{dtime.minute:0>2}pm"
 
         if diff.days == -1:
             dstr = "tomorrow"
@@ -292,7 +291,7 @@ def pretty_print_datetime(dt: Optional[datetime.datetime]) -> str:
 
         return f"{dstr} at {tstr}"
     else:
-        return str(dt)
+        return str(dtime)
 
 
 def main_remove(name: Optional[str]) -> None:

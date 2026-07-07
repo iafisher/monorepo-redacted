@@ -19,7 +19,7 @@ class Job(kgjson.Base):
     # ATTENTION: any field added here must also be added to `main_schedule` in `./cli.py`
     name: str
     cmd: List[str]
-    date_added: datetime.date
+    date_added: dt.date
     schedule: Optional[Schedule]
     enabled: bool
     run_now: bool
@@ -29,8 +29,8 @@ class Job(kgjson.Base):
     extra_path: Optional[List[str]] = None
     extra_pythonpath: Optional[List[str]] = None
     working_directory: Optional[str] = None
-    last_run_time: Optional[datetime.datetime] = None
-    next_scheduled_time: Optional[datetime.datetime] = None
+    last_run_time: Optional[dt.datetime] = None
+    next_scheduled_time: Optional[dt.datetime] = None
     last_exit_status: Optional[int] = None
     last_stats: Optional[JobStats] = None
 

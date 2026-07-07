@@ -7,7 +7,7 @@ from iafisher_foundation.prelude import *
 def main_create(
     original_title: str, *, vault: pathlib.Path = obsidian.Vault.main().path()
 ) -> None:
-    today = datetime.date.today()
+    today = dt.date.today()
     filename, parent = title_to_filename_and_parent(original_title, today=today)
 
     text = (vault / "attachments" / "templates" / "template-new-note.md").read_text()
@@ -42,7 +42,7 @@ def main_rename(
     )
 
 
-def title_to_filename_and_parent(t: str, *, today: datetime.date) -> Tuple[str, str]:
+def title_to_filename_and_parent(t: str, *, today: dt.date) -> Tuple[str, str]:
     """
     Convert title to filename and return `(filename, parent_article)`.
     """

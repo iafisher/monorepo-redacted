@@ -6,7 +6,7 @@ from openai.types import responses as openai_types
 
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import pdb
+from lib import pgdb
 
 from . import storage, universal
 from .common import TokenUsage
@@ -251,7 +251,7 @@ class ModelMisconfigurationError(KgError):
 class APIWrapper(ABC):
     def one_turn(
         self,
-        db: pdb.Connection,
+        db: pgdb.Connection,
         conversation_id: int,
         messages: List[StrDict],
         *,

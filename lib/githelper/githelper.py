@@ -123,22 +123,22 @@ def last_commit_hash(repo: Optional[PathLike] = None) -> str:
     return _git(["log", "-1", "--format=%h"], log=False, repo=repo).strip()
 
 
-def last_commit_time(repo: Optional[PathLike] = None) -> datetime.datetime:
+def last_commit_time(repo: Optional[PathLike] = None) -> dt.datetime:
     return timehelper.from_epoch_secs(
         float(_git(["log", "-1", "--format=%ct"], log=False, repo=repo).strip())
     )
 
 
 def last_commit_hash_of_day(
-    date: datetime.date, *, repo: Optional[PathLike] = None
+    date: dt.date, *, repo: Optional[PathLike] = None
 ) -> Optional[str]:
-    dt = datetime.datetime.combine(
-        date + datetime.timedelta(days=1),
-        datetime.time(hour=4),
+    dtime = dt.datetime.combine(
+        date + dt.timedelta(days=1),
+        dt.time(hour=4),
         tzinfo=timehelper.TZ_NYC,
     )
     return _git(
-        ["rev-list", "-1", f"--until={dt.isoformat()}", "HEAD"], log=False, repo=repo
+        ["rev-list", "-1", f"--until={dtime.isoformat()}", "HEAD"], log=False, repo=repo
     ).strip()
 
 

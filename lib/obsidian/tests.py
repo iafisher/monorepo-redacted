@@ -46,15 +46,15 @@ Lorem ipsum 2
 
 class Test(Base):
     def test_format_month(self):
-        self.assertEqual("2025-02", format_month(datetime.date(2025, 2, 1)))
-        self.assertEqual("2024-11", format_month(datetime.date(2024, 11, 15)))
+        self.assertEqual("2025-02", format_month(dt.date(2025, 2, 1)))
+        self.assertEqual("2024-11", format_month(dt.date(2024, 11, 15)))
 
     def test_split_dated_title(self):
         self.assertEqual(
-            (datetime.date(2025, 4, 6), "test"), split_dated_title("2025-04-06-test")
+            (dt.date(2025, 4, 6), "test"), split_dated_title("2025-04-06-test")
         )
         self.assertEqual(
-            (datetime.date(2025, 4, 1), "test"), split_dated_title("2025-04-test")
+            (dt.date(2025, 4, 1), "test"), split_dated_title("2025-04-test")
         )
 
     def test_update_link(self):

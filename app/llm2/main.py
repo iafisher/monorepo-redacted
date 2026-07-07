@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Literal
 
 from app.llm2.embeddings import cmd as embeddings_cmd
 from app.llm2.chat import main as main_chat
@@ -11,18 +11,18 @@ from app.llm2.summarize_titles import main as main_summarize_titles
 from app.llm2.trace import cmd as trace_cmd
 from iafisher_foundation import colors, tabular
 from iafisher_foundation.prelude import *
-from lib import command, iterhelper, llm, pdb
+from lib import command, iterhelper, llm, pgdb
 
 
 def main_conversations_count_tokens(conversation_id: int) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         conversation = llm.Conversation.resume(db, conversation_id)
 
     print(f"{conversation.count_tokens():,}")
 
 
 def main_conversations_estimate_cost(conversation_id: int) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         cost_breakdown = llm.estimate_conversation_cost(db, conversation_id)
 
     if cost_breakdown is None:
@@ -55,7 +55,7 @@ def main_conversations_estimate_cost(conversation_id: int) -> None:
 def main_conversations_list() -> None:
     table = tabular.Table()
     table.header(["ID", "App", "Messages", "Tokens", "Model", "Last updated at"])
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         datefmt = "%Y-%m-%d %I:%M %p"
         for conversation_from_db in fetch_conversations(db):
             token_count = conversation_from_db.token_count
@@ -79,10 +79,10 @@ class ConversationFromDatabase:
     message_count: int
     token_count: Optional[int]
     model: str
-    time_last_updated: datetime.datetime
+    time_last_updated: dt.datetime
 
 
-def fetch_conversations(db: pdb.Connection) -> List[ConversationFromDatabase]:
+def fetch_conversations(db: pgdb.Connection) -> List[ConversationFromDatabase]:
     return db.fetch_all(
         """
         SELECT
@@ -102,7 +102,7 @@ def fetch_conversations(db: pdb.Connection) -> List[ConversationFromDatabase]:
         ) r ON TRUE
         ORDER BY c.time_last_updated
         """,
-        t=pdb.t(ConversationFromDatabase),
+        t=pgdb.t(ConversationFromDatabase),
     )
 
 
@@ -117,7 +117,7 @@ def main_conversations_replay(
         ),
     ],
 ) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         conversation = llm.Conversation.resume(db, conversation_id)
         print(f"Model: {conversation.model_name()}\n")
         if roundtrip:
@@ -154,7 +154,7 @@ Be concise.
 def main_oneshot(words: List[str], *, model: str = llm.ANY_FAST_MODEL) -> None:
     prompt = " ".join(words)
     options = llm.InferenceOptions.fast()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         llm.oneshot(
             db,
             prompt,

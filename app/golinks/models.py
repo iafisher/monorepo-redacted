@@ -10,9 +10,9 @@ class Golink:
     url: str
     visit_count: int
     is_deprecated: bool
-    time_created: datetime.datetime
-    time_last_updated: datetime.datetime
-    time_last_visited: Optional[datetime.datetime]
+    time_created: dt.datetime
+    time_last_updated: dt.datetime
+    time_last_visited: Optional[dt.datetime]
 
     class T:
         name = sql.Identifier("name")

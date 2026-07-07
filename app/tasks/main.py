@@ -1,8 +1,6 @@
-from typing import Annotated
-
 from iafisher_foundation.prelude import *
 from iafisher_foundation import tabular, timehelper
-from lib import command, pdb, pushover
+from lib import command, pgdb, pushover
 
 
 KNOWN_CATEGORIES = {"MONO", "FISH", "CITY", "BLOG", "DEEP", "PERS"}
@@ -17,11 +15,11 @@ class Task:
     status: str
     priority: int
     appeal: int
-    deadline: Optional[datetime.date]
+    deadline: Optional[dt.date]
     blocked_on: Optional[str]
-    backlog_until: Optional[datetime.date]
-    time_created: datetime.datetime
-    time_closed: datetime.datetime
+    backlog_until: Optional[dt.date]
+    time_created: dt.datetime
+    time_closed: dt.datetime
 
 
 @dataclass
@@ -31,7 +29,7 @@ class TaskUpdate:
     old_value: str
     new_value: str
     comment: str
-    time_updated: datetime.datetime
+    time_updated: dt.datetime
 
 
 def main_create(
@@ -75,7 +73,7 @@ def main_create(
     if appeal_int is None:
         raise KgError("unknown appeal", appeal=appeal, choices=priority_appeal_choices)
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         time_created = timehelper.now()
         new_task_id = db.fetch_val(
             """
@@ -120,7 +118,7 @@ def main_create(
 
 
 def main_list(*, backlog: bool = False) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         # TODO(2026-03): More elegant way of doing this?
         if backlog:
             status1 = status2 = "backlog"
@@ -136,14 +134,14 @@ def main_list(*, backlog: bool = False) -> None:
             ORDER BY deadline ASC, priority DESC, appeal DESC, time_created ASC
             """,
             dict(status1=status1, status2=status2),
-            t=pdb.t(Task),
+            t=pgdb.t(Task),
         )
 
     _print_list(tasks)
 
 
 def main_mark_backlog(task_id: str, *, until: Optional[str]) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         db.execute(
             "CALL tasks_mark_backlog(%(task_id)s, %(until)s)",
             dict(task_id=task_id, until=until),
@@ -153,7 +151,7 @@ def main_mark_backlog(task_id: str, *, until: Optional[str]) -> None:
 def main_mark_blocked(
     task_id: str, *, blocked_on: Annotated[str, command.Extra(name="-on")]
 ) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         db.execute(
             "CALL tasks_mark_blocked(%(task_id)s, %(blocked_on)s)",
             dict(task_id=task_id, blocked_on=blocked_on),
@@ -161,17 +159,17 @@ def main_mark_blocked(
 
 
 def main_mark_done(task_id: str) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         db.execute("CALL tasks_mark_done(%(task_id)s)", dict(task_id=task_id))
 
 
 def main_mark_open(task_id: str) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         db.execute("CALL tasks_mark_open(%(task_id)s)", dict(task_id=task_id))
 
 
 def main_mark_wontfix(task_id: str) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         db.execute("CALL tasks_mark_wontfix(%(task_id)s)", dict(task_id=task_id))
 
 
@@ -219,7 +217,7 @@ def main_update(
         "backlog_until": backlog_until,
     }
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         for field_name, new_value in field_name_to_new_value.items():
             if new_value is None:
                 continue
@@ -234,7 +232,7 @@ def main_update(
 
 def main_jobs_reopen_if_backlog_until_past() -> None:
     today = timehelper.today()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         # TODO(2026-03): Would be nicer to use the stored procedure.
         task_ids_to_revisit = db.fetch_all(
             """
@@ -244,7 +242,7 @@ def main_jobs_reopen_if_backlog_until_past() -> None:
             RETURNING task_id
             """,
             dict(today=today),
-            t=pdb.tuple_row,
+            t=pgdb.tuple_row,
         )
 
         n = len(task_ids_to_revisit)
@@ -253,8 +251,8 @@ def main_jobs_reopen_if_backlog_until_past() -> None:
 
 
 def main_jobs_notify_if_due_soon() -> None:
-    tomorrow = timehelper.today() + datetime.timedelta(days=1)
-    with pdb.connect() as db:
+    tomorrow = timehelper.today() + dt.timedelta(days=1)
+    with pgdb.connect() as db:
         tasks_due_soon = db.fetch_all(
             """
             SELECT *
@@ -262,7 +260,7 @@ def main_jobs_notify_if_due_soon() -> None:
             WHERE deadline IS NOT NULL AND deadline <= %(tomorrow)s
             """,
             dict(tomorrow=tomorrow),
-            t=pdb.t(Task),
+            t=pgdb.t(Task),
         )
 
     for task in tasks_due_soon:

@@ -19,6 +19,7 @@ Subcommands:
   check-heartbeat    . Check the heartbeat file.
   jobs               . Manage background jobs.
   logs               . Print logs for apps.
+  r                  . Run a command on the remote server.
   shell
 
 
@@ -259,6 +260,13 @@ Arguments:
 
   app
   [-follow]
+
+
+------------
+
+Usage: kg r ...
+
+  Run a command on the remote server.
 
 
 ------------

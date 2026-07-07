@@ -14,7 +14,7 @@ Typical usage:
 
 """
 
-from typing import Annotated, TypeVar
+from typing import TypeVar
 
 from iafisher_foundation.prelude import *
 from lib import command, kgjson
@@ -107,7 +107,7 @@ def request(cls: type[T]) -> T:
 
 class CustomJSONProvider(DefaultJSONProvider):
     def default(self, obj):  # type: ignore
-        if isinstance(obj, (datetime.datetime, datetime.date)):
+        if isinstance(obj, (dt.datetime, dt.date)):
             return obj.isoformat()
         return DefaultJSONProvider.default(obj)
 

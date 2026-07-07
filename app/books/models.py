@@ -8,8 +8,8 @@ from psycopg import sql
 class Book:
     title: str
     author: str
-    date_started: datetime.date
-    date_finished: Optional[datetime.date]
+    date_started: dt.date
+    date_finished: Optional[dt.date]
     pages: Optional[int]
 
     class T:

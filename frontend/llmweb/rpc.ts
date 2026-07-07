@@ -4,6 +4,7 @@ export interface Message {
   messageId: number;
   role: string;
   content: string;
+  summary: string;
   vote: string;
   timeCreated: string;
 }

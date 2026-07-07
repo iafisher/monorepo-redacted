@@ -47,10 +47,52 @@ class LockFile(Generic[T]):
         f.write(t.serialize(**kwargs))  # type: ignore
 
 
+@dataclass
+class Rename:
+    """
+    Use this class to rename fields that are not valid Python identifiers, e.g.:
+
+        @dataclass
+        class Example(kgjson.Base):
+            from_: Annotated[str, kgjson.Rename(name="from")]
+    """
+
+    name: str
+
+
+@dataclass
+class StoreMessage:
+    """
+    Use this class to store a full copy of the original message on the class.
+
+        @dataclass
+        class Example(kgjson.Base):
+            x: int
+            raw: Annotated[StrDict, kgjson.StoreMessage()]
+
+    If the original message has fields other than `x`, they will be available on the
+    `raw` dict.
+    """
+
+
 class Base:
     def serialize(
         self, *, camel_case: bool = False, indent: Optional[int] = None
     ) -> str:
+        dataclass_fields: ItemsView[str, Any] = cast(
+            Dict[str, Any], self.__dataclass_fields__  # type: ignore
+        ).items()
+        for field_name, field in dataclass_fields:
+            # TODO(2026-06): This logic is duplicated in `deserialize`.
+            type_args = typing.get_args(field.type)
+            if len(type_args) == 2 and isinstance(type_args[1], Rename):
+                # TODO(2026-06): Support this. This is mildly annoying since I'll have to get rid of
+                # `dataclasses.asdict` and do the recursive serialization myself.
+                raise KgError(
+                    "Serializing a field with a `Rename` annotation is not currently supported.",
+                    field_name=field_name,
+                )
+
         as_dict = dataclasses.asdict(self)  # type: ignore
         if camel_case:
             as_dict = _snake_to_camel_dict(as_dict)
@@ -117,7 +159,7 @@ class Base:
                 return expected_type._deserialize_dict(x, path=path, validate=validate)
             elif isinstance(x, expected_type):
                 return x
-            elif expected_type is datetime.date and isinstance(x, str):
+            elif expected_type is dt.date and isinstance(x, str):
                 try:
                     return parse_date(x)
                 except ValueError:
@@ -126,12 +168,12 @@ class Base:
                         json_path=path,
                         value=x,
                     )
-            elif expected_type is datetime.datetime:
+            elif expected_type is dt.datetime:
                 if isinstance(x, int) or isinstance(x, float):
-                    return datetime.datetime.fromtimestamp(x, tz=timehelper.TZ_NYC)
+                    return dt.datetime.fromtimestamp(x, tz=timehelper.TZ_NYC)
                 elif isinstance(x, str):
                     try:
-                        dt = datetime.datetime.fromisoformat(x)
+                        dtime = dt.datetime.fromisoformat(x)
                     except ValueError:
                         raise KgError(
                             "datetime field must be in ISO 8601 format",
@@ -139,21 +181,21 @@ class Base:
                             value=x,
                         )
                     else:
-                        if not timehelper.is_datetime_aware(dt):
+                        if not timehelper.is_datetime_aware(dtime):
                             raise KgError(
                                 "if datetime field is represented as a string, it must contain time-zone information",
                                 json_path=path,
                                 value=x,
                             )
 
-                        return dt
+                        return dtime
                 else:
                     raise KgError(
                         "datetime field must be represented in ISO 8601 format, or as seconds since the Unix epoch",
                         json_path=path,
                         value=x,
                     )
-            elif expected_type is datetime.time:
+            elif expected_type is dt.time:
                 try:
                     return humanunits.parse_time(x)
                 except KgError as e:
@@ -284,26 +326,40 @@ class Base:
         dataclass_fields: ItemsView[str, Any] = cast(
             Dict[str, Any], cls.__dataclass_fields__  # type: ignore
         ).items()
-        for field_name, field in dataclass_fields:
-            this_path = path + f".{field_name}"
+        for field_name_in_cls, field in dataclass_fields:
+            type_args = typing.get_args(field.type)
+            if len(type_args) == 2 and isinstance(type_args[1], Rename):
+                field_name_in_json = type_args[1].name
+                field_type = type_args[0]
+            elif len(type_args) == 2 and isinstance(type_args[1], StoreMessage):
+                # TODO(2026-06): Check that the type is `StrDict`.
+                kwargs[field_name_in_cls] = d
+                continue
+            else:
+                field_name_in_json = field_name_in_cls
+                field_type = field.type
 
-            if field_name not in d:
+            this_path = path + f".{field_name_in_json}"
+
+            if field_name_in_json not in d:
                 if not isinstance(field.default, dataclasses._MISSING_TYPE):
                     v = field.default
                 elif not isinstance(field.default_factory, dataclasses._MISSING_TYPE):
                     v = field.default_factory()
-                elif _is_optional_type(field.type):
+                elif _is_optional_type(field_type):
                     v = None
                 else:
                     raise KgError(
-                        "missing value for key", key=field_name, json_path=this_path
+                        "missing value for key",
+                        key=field_name_in_json,
+                        json_path=this_path,
                     )
             else:
                 v = cls._deserialize_value(
-                    d[field_name], field.type, path=this_path, validate=validate
+                    d[field_name_in_json], field_type, path=this_path, validate=validate
                 )
 
-            kwargs[field_name] = v
+            kwargs[field_name_in_cls] = v
 
         return cls(**kwargs)
 
@@ -322,9 +378,9 @@ def _is_optional_type(type_: Any) -> bool:
 class KgJsonEncoder(json.JSONEncoder):
     @override
     def default(self, o: Any) -> Any:
-        if isinstance(o, datetime.date):
+        if isinstance(o, dt.date):
             return o.isoformat()
-        elif isinstance(o, datetime.time):
+        elif isinstance(o, dt.time):
             return o.isoformat()
         elif isinstance(o, decimal.Decimal):
             return str(o)

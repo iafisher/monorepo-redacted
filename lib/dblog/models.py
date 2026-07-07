@@ -12,7 +12,7 @@ class Entry:
     machine: str
     event: str
     payload: Dict[str, Any]
-    time_created: datetime.datetime
+    time_created: dt.datetime
 
     class T:
         entry_id = sql.Identifier("entry_id")

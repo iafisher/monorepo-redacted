@@ -1,5 +1,5 @@
 from iafisher_foundation.prelude import *
-from lib import llm, pdb
+from lib import llm, pgdb
 
 
 SYSTEM_PROMPT = """\
@@ -16,7 +16,7 @@ are typically invoked non-interactively.
 
 def main(filepath: pathlib.Path, *, model: str = llm.ANY_MODEL) -> None:
     text_to_proofread = filepath.read_text()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         model_response = llm.oneshot(
             db,
             text_to_proofread,

@@ -8,7 +8,7 @@ from prompt_toolkit.history import FileHistory
 
 from iafisher_foundation import colors, tabular
 from iafisher_foundation.prelude import *
-from lib import kgenv, llm, pdb
+from lib import kgenv, llm, pgdb
 from . import commanddef
 from .commanddef import CommandDef
 
@@ -36,7 +36,7 @@ def loop(
     options: llm.InferenceOptions,
 ) -> Optional[llm.Conversation]:
     app_name = f"llm2::{app_subname}"
-    with pdb.connect(transaction_mode=pdb.TransactionMode.AUTOCOMMIT) as db:
+    with pgdb.connect(transaction_mode=pgdb.TransactionMode.AUTOCOMMIT) as db:
         state = _setup_conversation(db, model, resume_conversation_id, options)
         print("(Press Opt+Enter to submit prompt.)\n")
 
@@ -103,7 +103,7 @@ def loop(
 
 
 def _setup_conversation(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     model: str,
     resume_conversation_id: Optional[int],
     options: llm.InferenceOptions,
@@ -150,7 +150,7 @@ def _create_prompt_session(app_subname: str, state: State) -> PromptSession[str]
 
 
 def _handle_vote(
-    _db: pdb.Connection,
+    _db: pgdb.Connection,
     _conversation: Optional[llm.Conversation],
     _vote: str,
 ) -> None:
@@ -159,7 +159,7 @@ def _handle_vote(
 
 
 def _handle_compact(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     state: State,
     *,
     app_subname: str,
@@ -302,7 +302,7 @@ Action = Union[ActionPrompt, ActionRetry]
 
 
 def _handle_command(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     command: str,
     command_arg: str,
     state: State,
@@ -404,7 +404,7 @@ def _handle_command(
 
 
 def _send_prompt(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     state: State,
     app_name: str,
     system_prompt: str,

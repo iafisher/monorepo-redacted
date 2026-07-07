@@ -1,5 +1,6 @@
 import random
 import time
+import urllib.parse
 from typing import Literal, Self
 
 import requests
@@ -16,8 +17,8 @@ BackoffStrategy = Literal["linear", "exponential"]
 JITTER_PERCENT = 0.25
 EXPONENTIAL_BACKOFF_FACTOR = 2
 DEFAULT_MAX_RETRIES = 2
-DEFAULT_RETRY_AFTER = datetime.timedelta(seconds=5)
-DEFAULT_MAX_SLEEP = datetime.timedelta(seconds=300)
+DEFAULT_RETRY_AFTER = seconds(5)
+DEFAULT_MAX_SLEEP = seconds(300)
 DEFAULT_TIMEOUT_SECS = 30.0
 
 
@@ -26,13 +27,13 @@ class RetryConfig:
     # `max_retries` does not include the initial request. So if `max_retries=2`, the HTTP
     # request will be made up to 3 times.
     max_retries: int = DEFAULT_MAX_RETRIES
-    retry_after: datetime.timedelta = DEFAULT_RETRY_AFTER
+    retry_after: dt.timedelta = DEFAULT_RETRY_AFTER
     # If `linear`, then sleep for `retry_after` after every failure.
     # If `exponential`, then double the previous sleep time after every failure.
     backoff_strategy: BackoffStrategy = "linear"
     # Sleep time is capped at `max_sleep` even if backoff strategy would otherwise result in
     # a longer sleep. (Prevents exponential backoff from sleeping for hours.)
-    max_sleep: datetime.timedelta = datetime.timedelta(seconds=300)
+    max_sleep: dt.timedelta = seconds(300)
     # If `random_jitter` is true, then add/subtract a random amount of sleep time capped at
     # `JITTER_PERCENT`.
     random_jitter: bool = True
@@ -45,8 +46,8 @@ class RetryConfig:
         cls,
         *,
         max_retries: int = DEFAULT_MAX_RETRIES,
-        retry_after: datetime.timedelta = DEFAULT_RETRY_AFTER,
-        max_sleep: datetime.timedelta = DEFAULT_MAX_SLEEP,
+        retry_after: dt.timedelta = DEFAULT_RETRY_AFTER,
+        max_sleep: dt.timedelta = DEFAULT_MAX_SLEEP,
     ) -> Self:
         return cls(
             max_retries=max_retries,
@@ -91,6 +92,7 @@ def get(
     headers: Optional[Dict[str, str]] = None,
     raise_on_error: bool = True,
     allow_redirects: bool = True,
+    include_url_in_logs: bool = True,
 ) -> requests.Response:
     """
     Perform an HTTP GET request.
@@ -105,6 +107,7 @@ def get(
         headers=headers,
         raise_on_error=raise_on_error,
         allow_redirects=allow_redirects,
+        include_url_in_logs=include_url_in_logs,
     )
 
 
@@ -118,6 +121,7 @@ def post(
     headers: Optional[Dict[str, str]] = None,
     raise_on_error: bool = True,
     allow_redirects: bool = True,
+    include_url_in_logs: bool = True,
 ) -> requests.Response:
     """
     Perform an HTTP POST request.
@@ -134,6 +138,7 @@ def post(
         headers=headers,
         raise_on_error=raise_on_error,
         allow_redirects=allow_redirects,
+        include_url_in_logs=include_url_in_logs,
     )
 
 
@@ -143,13 +148,14 @@ def _request(
     *,
     data: Any = None,
     json: Any = None,
-    timeout_secs: Union[Optional[float], Nothing] = NOTHING,
-    retry_config: Union[Optional[RetryConfig], Nothing] = NOTHING,
+    timeout_secs: Union[Optional[float], Nothing],
+    retry_config: Union[Optional[RetryConfig], Nothing],
+    headers: Optional[Dict[str, str]],
+    raise_on_error: bool,
+    allow_redirects: bool,
+    include_url_in_logs: bool,
     sleep_impl: Optional[Callable[[float], None]] = None,
     random_uniform_impl: Optional[Callable[[float, float], float]] = None,
-    headers: Optional[Dict[str, str]] = None,
-    raise_on_error: bool = True,
-    allow_redirects: bool = True,
 ) -> requests.Response:
     if isinstance(retry_config, Nothing):
         retry_config = RetryConfig()
@@ -159,13 +165,23 @@ def _request(
     if isinstance(timeout_secs, Nothing):
         timeout_secs = DEFAULT_TIMEOUT_SECS
 
+    if not include_url_in_logs:
+        try:
+            parsed_url = urllib.parse.urlparse(url)
+        except Exception:
+            url_for_logs = "<hidden>"
+        else:
+            url_for_logs = f"<hidden: {parsed_url.netloc}>"
+    else:
+        url_for_logs = url
+
     retry_state = RetryState.from_config(retry_config, random_uniform_impl)
     while True:
         retry_state.attempts_so_far += 1
         LOG.info(
             "sending HTTP %s request to %s (attempt %s of %s)",
             verb,
-            url,
+            url_for_logs,
             retry_state.attempts_so_far,
             retry_state.max_attempts(),
         )
@@ -183,14 +199,16 @@ def _request(
             )
         except requests.ConnectionError:
             LOG.warning(
-                "HTTP %s request failed with connection error (url: %s)", verb, url
+                "HTTP %s request failed with connection error (url: %s)",
+                verb,
+                url_for_logs,
             )
         except requests.exceptions.Timeout:
             LOG.warning(
                 "HTTP %s request timed out after %s second(s) (url: %s)",
                 verb,
                 timeout_secs,
-                url,
+                url_for_logs,
             )
         else:
             if 200 <= response.status_code < 400:
@@ -199,27 +217,27 @@ def _request(
                     verb,
                     response.status_code,
                     len(response.content),
-                    url,
+                    url_for_logs,
                 )
                 return response
             elif response.status_code == 408:
                 LOG.warning(
                     "HTTP %s request failed with status code 408 Request Timeout (url: %s)",
                     verb,
-                    url,
+                    url_for_logs,
                 )
             elif response.status_code == 429:
                 LOG.warning(
                     "HTTP %s request failed with status code 429 Too Many Requests (url: %s)",
                     verb,
-                    url,
+                    url_for_logs,
                 )
             elif 400 <= response.status_code < 500:
                 if raise_on_error:
                     raise KgHttpError(
                         "HTTP request failed with status code 4xx",
                         verb=verb,
-                        url=url,
+                        url=url_for_logs,
                         status_code=response.status_code,
                         response_text=response.text,
                     )
@@ -230,14 +248,14 @@ def _request(
                     "HTTP %s request failed with status code %s (url: %s)",
                     verb,
                     response.status_code,
-                    url,
+                    url_for_logs,
                 )
             else:
                 LOG.warning(
                     "HTTP %s request returned unexpected status code %s (url: %s)",
                     verb,
                     response.status_code,
-                    url,
+                    url_for_logs,
                 )
 
         retry_result = retry_state.tick(
@@ -255,7 +273,7 @@ def _request(
                     raise KgHttpError(
                         message,
                         verb=verb,
-                        url=url,
+                        url=url_for_logs,
                         max_attempts=retry_state.max_attempts(),
                         last_response=response,
                     )
@@ -266,7 +284,7 @@ def _request(
                     "sleeping for %.1fs before retrying HTTP %s request (url: %s)",
                     seconds,
                     verb,
-                    url,
+                    url_for_logs,
                 )
                 (sleep_impl or time.sleep)(seconds)
 

@@ -10,9 +10,14 @@ from .redacted import *
 
 def send_email(subject: str, body: str, recipients: List[str], *, html: bool) -> None:
     recipients_string = ", ".join(recipients)
-    if kgenv.get_mode() == "test":
-        print(f"EMAIL: To: {recipients_string}, Subject: {subject}")
-        return
+    match kgenv.get_mode():
+        case "test":
+            print(f"EMAIL: To: {recipients_string}, Subject: {subject}")
+            return
+        case "dev":
+            subject = f"[dev] {subject}"
+        case "prod":
+            pass
 
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ADDRESS

@@ -2,7 +2,6 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import Annotated
 
 import yaml
 
@@ -248,7 +247,7 @@ def update_post_file(post_path: pathlib.Path, post_url: str, sha256_hash: str) -
     post_path.write_text(properties_text + document.fulltext_without_properties())
 
     # move out of drafts folder
-    today = datetime.date.today()
+    today = dt.date.today()
     destination_dir = post_path.parent.parent / str(today.year)
     destination_path = destination_dir / post_path.name.replace("Draft - ", "Blog - ")
 

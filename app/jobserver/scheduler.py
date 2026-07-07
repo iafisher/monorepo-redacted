@@ -37,7 +37,7 @@ Tzinfo = Optional[datetime.tzinfo]
 
 
 class BaseSchedule(ABC):
-    def get_next_scheduled_time(self, now: datetime.datetime) -> datetime.datetime:
+    def get_next_scheduled_time(self, now: dt.datetime) -> dt.datetime:
         """
         Returns the next scheduled time greater than `now`.
         """
@@ -52,7 +52,7 @@ class BaseSchedule(ABC):
         return r
 
     @abstractmethod
-    def get_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_interval(self, now: dt.datetime) -> dt.date:
         """
         Returns the first date of the interval of the schedule to which `now` belongs.
 
@@ -61,7 +61,7 @@ class BaseSchedule(ABC):
         pass
 
     @abstractmethod
-    def get_next_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_next_interval(self, now: dt.datetime) -> dt.date:
         """
         Returns the first date of the next interval after the `now`'s interval.
 
@@ -71,8 +71,8 @@ class BaseSchedule(ABC):
 
     @abstractmethod
     def get_times(
-        self, start_of_interval: datetime.date, tzinfo: Tzinfo
-    ) -> List[datetime.datetime]:
+        self, start_of_interval: dt.date, tzinfo: Tzinfo
+    ) -> List[dt.datetime]:
         """
         Returns all scheduled times within the interval, sorted in ascending order.
 
@@ -81,22 +81,18 @@ class BaseSchedule(ABC):
         pass
 
 
-combine = datetime.datetime.combine
+combine = dt.datetime.combine
 
 
-def mins(n: int) -> datetime.timedelta:
-    return datetime.timedelta(minutes=n)
-
-
-def days(n: int) -> datetime.timedelta:
-    return datetime.timedelta(days=n)
+def days(n: int) -> dt.timedelta:
+    return dt.timedelta(days=n)
 
 
 @dataclass
 class HourlySchedule(kgjson.Base, BaseSchedule):
     interval_mins: int
-    start_time_of_day: datetime.time = datetime.time(0, 0)
-    end_time_of_day: datetime.time = datetime.time(23, 59)
+    start_time_of_day: dt.time = dt.time(0, 0)
+    end_time_of_day: dt.time = dt.time(23, 59)
     days_of_week: List[str] = dataclasses.field(default_factory=list)
 
     @override
@@ -106,29 +102,27 @@ class HourlySchedule(kgjson.Base, BaseSchedule):
             raise KgError("start_time_of_day must be less than end_time_of_day", o=o)
 
     @override
-    def get_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_interval(self, now: dt.datetime) -> dt.date:
         return timehelper.start_of_week(now.date())
 
     @override
-    def get_next_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_next_interval(self, now: dt.datetime) -> dt.date:
         return self.get_interval(now) + days(7)
 
     @override
-    def get_times(
-        self, start_of_week: datetime.date, tzinfo: Tzinfo
-    ) -> List[datetime.datetime]:
+    def get_times(self, start_of_week: dt.date, tzinfo: Tzinfo) -> List[dt.datetime]:
         if len(self.days_of_week) > 0:
             days_of_week = sorted(
                 humanunits.parse_day_of_week(s) for s in self.days_of_week
             )
         else:
             days_of_week = list(range(0, 7))
-        r: List[datetime.datetime] = []
+        r: List[dt.datetime] = []
         for day_of_week in days_of_week:
             date = start_of_week + days(day_of_week)
             t = combine(date, self.start_time_of_day, tzinfo)
             end = combine(date, self.end_time_of_day, tzinfo)
-            interval = datetime.timedelta(minutes=self.interval_mins)
+            interval = minutes(self.interval_mins)
 
             while t <= end:
                 r.append(t)
@@ -139,7 +133,7 @@ class HourlySchedule(kgjson.Base, BaseSchedule):
 
 @dataclass
 class DailySchedule(kgjson.Base, BaseSchedule):
-    times_of_day: List[datetime.time]
+    times_of_day: List[dt.time]
 
     @override
     @classmethod
@@ -148,21 +142,21 @@ class DailySchedule(kgjson.Base, BaseSchedule):
             raise KgError("times_of_day cannot be empty", o=o)
 
     @override
-    def get_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_interval(self, now: dt.datetime) -> dt.date:
         return now.date()
 
     @override
-    def get_next_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_next_interval(self, now: dt.datetime) -> dt.date:
         return now.date() + days(1)
 
     @override
-    def get_times(self, date: datetime.date, tzinfo: Tzinfo) -> List[datetime.datetime]:
+    def get_times(self, date: dt.date, tzinfo: Tzinfo) -> List[dt.datetime]:
         return [combine(date, time_of_day, tzinfo) for time_of_day in self.times_of_day]
 
 
 @dataclass
 class WeeklySchedule(kgjson.Base, BaseSchedule):
-    times_of_day: List[datetime.time]
+    times_of_day: List[dt.time]
     # TODO(2025-11): SUBWAY: parse these into `int`s on deserialization
     days_of_week: List[str]
 
@@ -176,21 +170,19 @@ class WeeklySchedule(kgjson.Base, BaseSchedule):
             raise KgError("days_of_week cannot be empty", o=o)
 
     @override
-    def get_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_interval(self, now: dt.datetime) -> dt.date:
         return timehelper.start_of_week(now.date())
 
     @override
-    def get_next_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_next_interval(self, now: dt.datetime) -> dt.date:
         return self.get_interval(now) + days(7)
 
     @override
-    def get_times(
-        self, start_of_week: datetime.date, tzinfo: Tzinfo
-    ) -> List[datetime.datetime]:
+    def get_times(self, start_of_week: dt.date, tzinfo: Tzinfo) -> List[dt.datetime]:
         days_of_week = sorted(
             humanunits.parse_day_of_week(s) for s in self.days_of_week
         )
-        r: List[datetime.datetime] = []
+        r: List[dt.datetime] = []
         for day_of_week in days_of_week:
             date = start_of_week + days(day_of_week)
             for time_of_day in self.times_of_day:
@@ -200,7 +192,7 @@ class WeeklySchedule(kgjson.Base, BaseSchedule):
 
 @dataclass
 class MonthlySchedule(kgjson.Base, BaseSchedule):
-    times_of_day: List[datetime.time]
+    times_of_day: List[dt.time]
     days_of_month: List[int]
 
     @override
@@ -213,20 +205,18 @@ class MonthlySchedule(kgjson.Base, BaseSchedule):
             raise KgError("days_of_month cannot be empty", o=o)
 
     @override
-    def get_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_interval(self, now: dt.datetime) -> dt.date:
         return now.date().replace(day=1)
 
     @override
-    def get_next_interval(self, now: datetime.datetime) -> datetime.date:
+    def get_next_interval(self, now: dt.datetime) -> dt.date:
         return timehelper.next_month(now.date())
 
     @override
-    def get_times(
-        self, start_of_month: datetime.date, tzinfo: Tzinfo
-    ) -> List[datetime.datetime]:
+    def get_times(self, start_of_month: dt.date, tzinfo: Tzinfo) -> List[dt.datetime]:
         max_day = timehelper.days_in_month(start_of_month)
         days_of_month = set(min(x, max_day) for x in self.days_of_month)
-        r: List[datetime.datetime] = []
+        r: List[dt.datetime] = []
         for day in sorted(days_of_month):
             date = start_of_month.replace(day=day)
             for time_of_day in self.times_of_day:

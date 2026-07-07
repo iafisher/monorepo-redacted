@@ -1,4 +1,5 @@
 import json
+import pprint
 import tempfile
 from typing import Literal, Self
 
@@ -15,7 +16,7 @@ from . import kgjson
 class Author(kgjson.Base):
     first_name: str
     last_name: str
-    date_of_birth: Optional[datetime.date] = None
+    date_of_birth: Optional[dt.date] = None
 
 
 @dataclass
@@ -32,12 +33,12 @@ class Bookshelf(kgjson.Base):
 
 @dataclass
 class WithTimestamp(kgjson.Base):
-    timestamp: datetime.datetime
+    timestamp: dt.datetime
 
 
 @dataclass
 class WithTimeOfDay(kgjson.Base):
-    time_of_day: datetime.time
+    time_of_day: dt.time
 
 
 @dataclass
@@ -119,7 +120,7 @@ class Test(Base, TestCase):
         author = Author.deserialize(
             dict(first_name="Thomas", last_name="Pynchon", date_of_birth="1937-05-08")
         )
-        self.assertEqual(datetime.date(1937, 5, 8), author.date_of_birth)
+        self.assertEqual(dt.date(1937, 5, 8), author.date_of_birth)
 
         with self.assertRaises(KgError) as cm:
             Author.deserialize(
@@ -131,12 +132,12 @@ class Test(Base, TestCase):
     def test_deserialize_timestamp(self):
         o = WithTimestamp.deserialize(dict(timestamp=1736031348))
         self.assertEqual(
-            datetime.datetime(2025, 1, 4, 17, 55, 48, tzinfo=TZ_NYC), o.timestamp
+            dt.datetime(2025, 1, 4, 17, 55, 48, tzinfo=TZ_NYC), o.timestamp
         )
 
         o = WithTimestamp.deserialize(dict(timestamp="2025-01-04 17:55:48-05:00"))
         self.assertEqual(
-            datetime.datetime(2025, 1, 4, 17, 55, 48, tzinfo=TZ_NYC), o.timestamp
+            dt.datetime(2025, 1, 4, 17, 55, 48, tzinfo=TZ_NYC), o.timestamp
         )
 
         with self.assertRaises(KgError):
@@ -145,7 +146,7 @@ class Test(Base, TestCase):
 
     def test_deserialize_time_of_day(self):
         o = WithTimeOfDay.deserialize(dict(time_of_day="08:30"))
-        self.assertEqual(datetime.time(8, 30), o.time_of_day)
+        self.assertEqual(dt.time(8, 30), o.time_of_day)
 
     def test_deserialize_optional_dict(self):
         o = JobserverState.deserialize(
@@ -228,11 +229,46 @@ class Test(Base, TestCase):
         author = Author.deserialize(d, camel_case=True)
         self.assertEqual("DeLillo", author.last_name)
 
-    def test_deserialize_extra_key(self):
+    def test_deserialize_ignores_extra_key(self):
         d = dict(first_name="Philip", last_name="Roth", nationality="American")
         author = Author.deserialize(d)
         self.assertEqual("Philip", author.first_name)
         self.assertEqual("Roth", author.last_name)
+
+    def test_name_annotation(self):
+        @dataclass
+        class Example(kgjson.Base):
+            from_: Annotated[str, kgjson.Rename(name="from")]
+
+        d = {"from": "johndoe"}
+        example = Example.deserialize(d)
+        self.assertEqual(example.from_, "johndoe")
+        # self.assertExpectedInline(example.serialize(), """{"from_": "johndoe"}""")
+
+    def test_deserialize_store_message_annotation(self):
+        @dataclass
+        class Nested(kgjson.Base):
+            y: int
+            raw: Annotated[StrDict, kgjson.StoreMessage()]
+
+        @dataclass
+        class Example(kgjson.Base):
+            x: int
+            nested: Nested
+            raw: Annotated[StrDict, kgjson.StoreMessage()]
+
+        d = {"x": 10, "nested": {"y": 11, "extra_inner": True}, "extra_outer": True}
+        example = Example.deserialize(d)
+        self.assertExpectedInline(
+            pprint.pformat(example),
+            """\
+Example(x=10,
+        nested=Nested(y=11,
+                      raw={'extra_inner': True, 'y': 11}),
+        raw={'extra_outer': True,
+             'nested': {'extra_inner': True, 'y': 11},
+             'x': 10})""",
+        )
 
     def test_literal_annotation(self):
         @dataclass
@@ -241,7 +277,7 @@ class Test(Base, TestCase):
 
         example = Example.deserialize({"time_of_day": "morning"})
         self.assertExpectedInline(
-            repr(example),
+            pprint.pformat(example),
             """Test.test_literal_annotation.<locals>.Example(time_of_day='morning')""",
         )
 
@@ -254,14 +290,16 @@ class Test(Base, TestCase):
     def test_dict_field(self):
         @dataclass
         class Example(kgjson.Base):
-            last_updated: Dict[str, datetime.datetime]
+            last_updated: Dict[str, dt.datetime]
 
         example = Example.deserialize(
             {"last_updated": {"foo": "2025-01-01T00:00:00-05:00", "bar": 1771728968}}
         )
         self.assertExpectedInline(
-            repr(example),
-            """Test.test_dict_field.<locals>.Example(last_updated={'foo': datetime.datetime(2025, 1, 1, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=68400))), 'bar': datetime.datetime(2026, 2, 21, 21, 56, 8, tzinfo=zoneinfo.ZoneInfo(key='America/New_York'))})""",
+            pprint.pformat(example),
+            """\
+Example(last_updated={'bar': datetime.datetime(2026, 2, 21, 21, 56, 8, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')),
+                      'foo': datetime.datetime(2025, 1, 1, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=68400)))})""",
         )
 
         with self.assertRaises(KgError):

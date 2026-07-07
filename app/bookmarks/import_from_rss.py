@@ -6,7 +6,7 @@ from app.bookmarks.common import insert_bookmarks_filtering_duplicates
 from app.bookmarks.models import Bookmark
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import command, kgenv, kghttp, pdb
+from lib import command, kgenv, kghttp, pgdb
 
 
 T = Bookmark.T
@@ -30,7 +30,7 @@ class FeedItem:
     title: str
     url: str
 
-    def to_bookmark(self, time_created: datetime.datetime) -> Bookmark:
+    def to_bookmark(self, time_created: dt.datetime) -> Bookmark:
         return Bookmark(
             bookmark_id=-1,
             source_id="",
@@ -47,13 +47,13 @@ class FeedItem:
 
 
 # Don't import items from before this date.
-cutoff = datetime.datetime(year=2025, month=8, day=23, tzinfo=timehelper.TZ_NYC)
+cutoff = dt.datetime(year=2025, month=8, day=23, tzinfo=timehelper.TZ_NYC)
 
 
 def import_from_feed(url: str, *, dry_run: bool) -> None:
     feed_items = fetch_from_feed(url)
     time_created = timehelper.now()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         bookmarks = [
             feed_item.to_bookmark(time_created=time_created) for feed_item in feed_items
         ]
@@ -79,31 +79,31 @@ def _get_text(elem: ET.Element, names: List[str]) -> Optional[str]:
     return None
 
 
-def _parse_iso8601(dt: str) -> Optional[datetime.datetime]:
+def _parse_iso8601(s: str) -> Optional[dt.datetime]:
     try:
         # Handle trailing Z
-        if dt.endswith("Z"):
-            dt = dt[:-1] + "+00:00"
-        return datetime.datetime.fromisoformat(dt)
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        return dt.datetime.fromisoformat(s)
     except Exception:
         return None
 
 
-def _parse_date(text: Optional[str]) -> Optional[datetime.datetime]:
+def _parse_date(text: Optional[str]) -> Optional[dt.datetime]:
     if not text:
         return None
     # Try RFC 822/1123 (common in RSS)
     try:
         d = parsedate_to_datetime(text)
         if d and d.tzinfo is None:
-            d = d.replace(tzinfo=datetime.timezone.utc)
+            d = d.replace(tzinfo=dt.timezone.utc)
         return d
     except Exception:
         pass
     # Try ISO-8601 (common in Atom)
     d = _parse_iso8601(text)
     if d and d.tzinfo is None:
-        d = d.replace(tzinfo=datetime.timezone.utc)
+        d = d.replace(tzinfo=dt.timezone.utc)
     return d
 
 

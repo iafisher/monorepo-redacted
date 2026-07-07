@@ -1,13 +1,13 @@
 import pickle
 
 from iafisher_foundation.prelude import *
-from lib import command, kgenv, llm, pdb
+from lib import command, kgenv, llm, pgdb
 
 
 def main_record(
     *, model: str, prompt: str, outfile: pathlib.Path, web_search: bool
 ) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         conversation = llm.Conversation.start(
             db, model=model, app_name="llm2::trace", system_prompt=""
         )

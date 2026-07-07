@@ -41,7 +41,11 @@ def get_code_dir() -> pathlib.Path:
 
 
 def get_ian_dir() -> pathlib.Path:
-    match get_mode():
+    return get_ian_dir_for_mode(get_mode())
+
+
+def get_ian_dir_for_mode(mode: Mode) -> pathlib.Path:
+    match mode:
         case "prod":
             return pathlib.Path.home() / ".ian"
         case "dev":

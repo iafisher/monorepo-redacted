@@ -5,13 +5,12 @@ import subprocess
 import tempfile
 import time
 import uuid
-from typing import Annotated
 
 from app.llm2 import common
 from app.llm2.code import Hooks as VerboseHooks
 from iafisher_foundation.prelude import *
 from iafisher_foundation.scripting import q, sh0
-from lib import command, kgjson, githelper, kgenv, llm, pdb, simplemail
+from lib import command, kgjson, githelper, kgenv, llm, pgdb, simplemail
 
 
 @dataclass
@@ -116,7 +115,7 @@ def main_check_for_requests(
         request_file.unlink()
         LOG.info("deleted request file: %s", request_file)
 
-        with pdb.connect() as db:
+        with pgdb.connect() as db:
             conversation = llm.Conversation.fork(db, request.llm_conversation_id)
             _code_alone(
                 db,
@@ -140,7 +139,7 @@ def main_prompt(
     verbose: bool = False,
     preserve_temp_dir: bool = False,
 ) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         conversation = llm.Conversation.start(
             db,
             model=model,
@@ -162,7 +161,7 @@ def main_prompt(
 
 
 def _code_alone(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     conversation: llm.Conversation,
     *,
     request_id: str,

@@ -7,7 +7,7 @@ from .obsidian import Document, Section
 @dataclass
 class Event:
     text: str
-    time_of_day: datetime.time
+    time_of_day: dt.time
     canceled: bool
 
 

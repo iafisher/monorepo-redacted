@@ -1,21 +1,22 @@
 import code
 import importlib
 import readline
+import shlex
 import subprocess
 import sys
 import time
-from typing import Annotated
 
 from app.jobserver.cli import cmd as jobserver_cmd
 from lib import command, fzf, humanunits, kgenv, simplemail
 from iafisher_foundation import colors
 from iafisher_foundation.prelude import *
+from iafisher_foundation.scripting import sh0
 
 
 def main_check_heartbeat(
     *,
     max_age: Annotated[
-        datetime.timedelta, command.Extra(converter=humanunits.parse_duration)
+        dt.timedelta, command.Extra(converter=humanunits.parse_duration)
     ],
 ) -> None:
     max_age_secs = max_age.total_seconds()
@@ -82,6 +83,14 @@ def main_logs(app: Optional[str], *, follow: bool = False) -> None:
         subprocess.run(["less", "-F", path])
 
 
+def main_remote(args: Annotated[List[str], command.Extra(passthrough=True)]) -> None:
+    machine = kgenv.get_machine()
+    if machine != kgenv.MACHINE_LAPTOP:
+        raise KgError("`kg r` can only be run from laptop", machine=machine)
+
+    sh0(shlex.join(["ssh", "homeserver2"] + args))
+
+
 def main_shell() -> None:
     os.chdir(kgenv.get_code_dir())
 
@@ -132,6 +141,7 @@ cmd.add2(
 )
 cmd.add("jobs", jobserver_cmd)
 cmd.add2("logs", main_logs, help="Print logs for apps.")
+cmd.add2("r", main_remote, help="Run a command on the remote server.")
 cmd.add2("shell", main_shell)
 
 if __name__ == "__main__":

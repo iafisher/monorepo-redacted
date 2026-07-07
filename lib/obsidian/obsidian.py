@@ -110,14 +110,14 @@ def _update_link(
     return text
 
 
-def format_month(date: datetime.date) -> str:
+def format_month(date: dt.date) -> str:
     return f"{date.year}-{date.month:0>2}"
 
 
 dated_title_pattern = lazy_re(r"^([0-9]{4})-([0-9]{2})(?:-([0-9]{2}))?-(.+)$")
 
 
-def split_dated_title(title: str) -> Tuple[datetime.date, str]:
+def split_dated_title(title: str) -> Tuple[dt.date, str]:
     m = dated_title_pattern.get().match(title)
     if not m:
         raise KgError("could not parse as dated title", title=title)
@@ -126,7 +126,7 @@ def split_dated_title(title: str) -> Tuple[datetime.date, str]:
     month = int(m.group(2))
     day = int(m.group(3)) if m.group(3) is not None else 1
     title = m.group(4).rstrip()
-    return datetime.date(year, month, day), title
+    return dt.date(year, month, day), title
 
 
 @contextlib.contextmanager

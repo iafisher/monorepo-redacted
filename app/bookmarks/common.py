@@ -1,12 +1,12 @@
 from app.bookmarks.models import Bookmark
-from lib import pdb
+from lib import pgdb
 from iafisher_foundation.prelude import *
 
 T = Bookmark.T
 
 
 def insert_bookmarks_filtering_duplicates(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     bookmarks: List[Bookmark],
     *,
     source_name_for_logging: str,
@@ -25,7 +25,7 @@ def insert_bookmarks_filtering_duplicates(
             source_name_for_logging,
         )
         rows = db.execute_many_and_fetch_all(
-            pdb.SQL(
+            pgdb.SQL(
                 "INSERT INTO {}({}) VALUES({}) ON CONFLICT ({url}) DO NOTHING RETURNING url"
             ).format(T.table, T.star_for_insert, T.placeholders, url=T.url),
             [dataclasses.asdict(bookmark) for bookmark in bookmarks],

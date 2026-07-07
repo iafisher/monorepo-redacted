@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Literal
+from typing import Literal
 
 from app.llm2 import chatloop, common
 from iafisher_foundation import colors, timehelper

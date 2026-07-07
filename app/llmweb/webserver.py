@@ -14,7 +14,7 @@ from app.llm2.redacted import *
 from app.llmweb import db_models, rpc
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *  # noqa: F401
-from lib import kgjson, llm, pdb, webserver
+from lib import kgjson, llm, pgdb, webserver
 
 
 app = webserver.make_app("llmweb", file=__file__)
@@ -57,7 +57,7 @@ def frontend_page(*args: Any, **kwargs: Any):
 
 @app.route("/api/conversations", methods=["GET"])
 def api_conversations():
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         conversations = db_fetch_conversations(db)
 
     return webserver.json_response2(
@@ -66,10 +66,10 @@ def api_conversations():
 
 
 def db_fetch_conversations(
-    db: pdb.Connection,
+    db: pgdb.Connection,
 ) -> List[rpc.FetchConversationsResponseItem]:
     return db.fetch_all(
-        pdb.SQL(
+        pgdb.SQL(
             """
             SELECT w.conversation_id, w.title, l.model, w.time_created, COUNT(m.message_id) AS message_count
             FROM llmweb_conversations w
@@ -81,22 +81,22 @@ def db_fetch_conversations(
             ORDER BY w.time_created DESC
             """
         ),
-        t=pdb.t(rpc.FetchConversationsResponseItem),
+        t=pgdb.t(rpc.FetchConversationsResponseItem),
     )
 
 
 @app.route("/api/conversation/<int:conversation_id>", methods=["GET"])
 def api_conversation(conversation_id: int):
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         messages = db.fetch_all(
             """
-            SELECT message_id, role, content, vote, time_created
+            SELECT message_id, role, content, summary, vote, time_created
             FROM llmweb_messages
             WHERE conversation_id = %(conversation_id)s
             ORDER BY message_id
             """,
             dict(conversation_id=conversation_id),
-            t=pdb.t(rpc.Message),
+            t=pgdb.t(rpc.Message),
         )
 
         model, raw_messages, llm_conversation_id = db.fetch_one(
@@ -110,7 +110,7 @@ def api_conversation(conversation_id: int):
             )
             """,
             dict(conversation_id=conversation_id),
-            t=pdb.tuple_row,
+            t=pgdb.tuple_row,
         )
 
     try:
@@ -138,7 +138,7 @@ def api_start():
     except KgError:
         return webserver.json_response_error(f"invalid model: {model_name}")
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         now = timehelper.now()
         llm_conversation_id = llm.storage.create_conversation(
             db,
@@ -160,7 +160,7 @@ def api_vote():
     if rpc_request.vote not in ("", "up", "down"):
         return webserver.json_response_error("vote must be '', 'up', or 'down'")
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         db.execute(
             """
             UPDATE llmweb_messages
@@ -175,7 +175,7 @@ def api_vote():
 
 @app.route("/api/transcript/<int:conversation_id>", methods=["GET"])
 def api_transcript(conversation_id: int):
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         conversation = llm.Conversation.resume(db, conversation_id)
 
     response = rpc.TranscriptResponse(
@@ -246,7 +246,9 @@ Chunk = Union[
 class StreamingHooks(llm.BaseHooks):
     _text_builder: List[str]
 
-    def __init__(self, db: pdb.Connection, conversation_id: int, q: queue.Queue[Chunk]):
+    def __init__(
+        self, db: pgdb.Connection, conversation_id: int, q: queue.Queue[Chunk]
+    ):
         self.db = db
         self.conversation_id = conversation_id
         self.q = q
@@ -275,7 +277,7 @@ def api_prompt():
 
     q: queue.Queue[Chunk] = queue.Queue()
 
-    def produce_chunks_inner(db: pdb.Connection) -> None:
+    def produce_chunks_inner(db: pgdb.Connection) -> None:
         if len(user_prompt) == 0:
             # In this case, we don't bother inserting a message into the database.
             q.put(ChunkError("The message was blank."))
@@ -424,12 +426,13 @@ def api_prompt():
                     app_name="llmweb",
                     options=llm.InferenceOptions.fast(),
                 )
-                output_text = summary_response.output_text
+                summary_text = summary_response.output_text
             else:
-                output_text = response.output_text
+                summary_text = ""
 
+            output_text = response.output_text
             assistant_message = insert_message(
-                db, conversation_id, "assistant", output_text
+                db, conversation_id, "assistant", output_text, summary=summary_text
             )
             q.put(ChunkMessageCreated(assistant_message))
 
@@ -456,7 +459,7 @@ def api_prompt():
             q.put(ChunkTokenCount(token_count))
 
     def produce_chunks():
-        with pdb.connect() as db:
+        with pgdb.connect() as db:
             try:
                 produce_chunks_inner(db)
             except Exception as e:
@@ -538,7 +541,7 @@ def enqueue_code_alone_request(llm_conversation_id: int, prompt: str) -> uuid.UU
     return request_id
 
 
-def fetch_llm_conversation_id(db: pdb.Connection, conversation_id: int) -> int:
+def fetch_llm_conversation_id(db: pgdb.Connection, conversation_id: int) -> int:
     return db.fetch_val(
         """
         SELECT llm_conversation_id
@@ -550,34 +553,42 @@ def fetch_llm_conversation_id(db: pdb.Connection, conversation_id: int) -> int:
 
 
 def insert_message(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     conversation_id: int,
     role: Literal["user", "assistant", "system", "error", "citations", "websearch"],
     content: str,
+    *,
+    summary: str = "",
 ) -> db_models.Message:
     # TODO(2026-02): `role` should be split into `role` ('user' or 'assistant') and `type`.
     # One advantage of this is that I don't need to update the database constraint every time
     # I add a new message type.
     now = timehelper.now()
     return db.fetch_one(
-        pdb.SQL(
+        pgdb.SQL(
             """
-            INSERT INTO llmweb_messages(conversation_id, role, content, time_created)
-            VALUES (%(conversation_id)s, %(role)s, %(content)s, %(now)s)
+            INSERT INTO llmweb_messages(conversation_id, role, content, summary, time_created)
+            VALUES (%(conversation_id)s, %(role)s, %(content)s, %(summary)s, %(now)s)
             RETURNING {star}
             """
         ).format(star=db_models.Message.T.star),
-        dict(conversation_id=conversation_id, role=role, content=content, now=now),
-        t=pdb.t(db_models.Message),
+        dict(
+            conversation_id=conversation_id,
+            role=role,
+            content=content,
+            summary=summary,
+            now=now,
+        ),
+        t=pgdb.t(db_models.Message),
     )
 
 
 def insert_conversation(
-    db: pdb.Connection, llm_conversation_id: int
+    db: pgdb.Connection, llm_conversation_id: int
 ) -> db_models.Conversation:
     now = timehelper.now()
     return db.fetch_one(
-        pdb.SQL(
+        pgdb.SQL(
             """
             INSERT INTO llmweb_conversations(llm_conversation_id, title, time_created)
             VALUES (%(llm_conversation_id)s, '', %(now)s)
@@ -585,7 +596,7 @@ def insert_conversation(
             """
         ).format(star=db_models.Conversation.T.star),
         dict(llm_conversation_id=llm_conversation_id, now=now),
-        t=pdb.t(db_models.Conversation),
+        t=pgdb.t(db_models.Conversation),
     )
 
 

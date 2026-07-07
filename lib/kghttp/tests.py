@@ -160,9 +160,7 @@ class Test(BaseExpectStdout):
             with self.assertRaisesRegex(KgHttpError, "failed too many times"):
                 self.do_get(
                     server,
-                    retry_config=RetryConfig(
-                        max_retries=1, retry_after=datetime.timedelta(seconds=0.01)
-                    ),
+                    retry_config=RetryConfig(max_retries=1, retry_after=seconds(0.01)),
                 )
             self.assertExpectedInline(
                 self.stdout(),
@@ -214,7 +212,7 @@ test: sleep for 12.5s
                 self.do_post(
                     server,
                     retry_config=RetryConfig.exponential(
-                        max_retries=7, max_sleep=datetime.timedelta(seconds=60)
+                        max_retries=7, max_sleep=seconds(60)
                     ),
                 )
             self.assertExpectedInline(
@@ -276,6 +274,10 @@ test: sleep for 10.0s
             sleep_impl=sleep_impl,
             random_uniform_impl=random_uniform_impl,
             retry_config=retry_config,
+            headers=None,
+            raise_on_error=True,
+            allow_redirects=True,
+            include_url_in_logs=True,
         )
 
     def do_post(
@@ -292,6 +294,10 @@ test: sleep for 10.0s
             sleep_impl=sleep_impl,
             random_uniform_impl=random_uniform_impl,
             retry_config=retry_config,
+            headers=None,
+            raise_on_error=True,
+            allow_redirects=True,
+            include_url_in_logs=True,
         )
 
 

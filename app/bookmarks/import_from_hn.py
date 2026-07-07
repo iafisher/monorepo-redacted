@@ -1,5 +1,4 @@
 import textwrap
-from typing import Annotated
 
 from app.bookmarks import hn
 from app.bookmarks import models as bookmark_models
@@ -8,7 +7,7 @@ from app.bookmarks.redacted import *
 
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import command, llm, pdb
+from lib import command, llm, pgdb
 
 
 @dataclass
@@ -79,7 +78,7 @@ def main(
     LOG.info("querying Hacker News for stories")
     stories = query_hn(story_limit=story_limit, comment_limit=comment_limit)
     LOG.info("prompting LLM for recommendations from %d HN stories", len(stories))
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         recommended_stories = get_llm_recommendations(db, stories, model=model)
         if len(recommended_stories) == 0:
             LOG.info("no recommended stories")
@@ -90,7 +89,7 @@ def main(
 HN_AUTO_RECOMMENDATION_SOURCE = "hn_auto_recommendations"
 
 
-def save_bookmarks(db: pdb.Connection, stories: List[Story]) -> None:
+def save_bookmarks(db: pgdb.Connection, stories: List[Story]) -> None:
     time_created = timehelper.now()
     bookmarks = [
         bookmark_models.Bookmark(
@@ -117,7 +116,7 @@ def save_bookmarks(db: pdb.Connection, stories: List[Story]) -> None:
 
 
 def get_llm_recommendations(
-    db: pdb.Connection, stories: List[Story], *, model: str
+    db: pgdb.Connection, stories: List[Story], *, model: str
 ) -> List[Story]:
     message = make_prompt_from_hn_stories(stories)
     response = llm.oneshot(

@@ -3,7 +3,7 @@ from flask import render_template_string
 from app.bookmarks import models, rpc
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *  # noqa: F401
-from lib import dblog, pdb, webserver
+from lib import dblog, pgdb, webserver
 
 
 app = webserver.make_app("bookmarks", file=__file__)
@@ -23,18 +23,18 @@ def main_page():
 
 @app.route("/api/load", methods=["GET"])
 def api_load():
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         bookmarks = fetch_bookmarks(db)
         return webserver.json_response(rpc.LoadResponse(bookmarks=bookmarks))
 
 
 def fetch_bookmarks(
-    db: pdb.Connection, *, include_archived_bookmark_id: int = -1
+    db: pgdb.Connection, *, include_archived_bookmark_id: int = -1
 ) -> List[rpc.Bookmark]:
     # necessary to order by both `time_created` and `bookmark_id` as the former is not guaranteed
     # to be unique (and indeed is often _not_ unique)
     return db.fetch_all(
-        pdb.SQL(
+        pgdb.SQL(
             """
             SELECT *
             FROM {table}
@@ -49,17 +49,17 @@ def fetch_bookmarks(
             time_created=T.time_created,
         ),
         dict(bookmark_id=include_archived_bookmark_id),
-        t=pdb.t(rpc.Bookmark),
+        t=pgdb.t(rpc.Bookmark),
     )
 
 
 @app.route("/api/update", methods=["POST"])
 def api_update():
     req = webserver.request(rpc.UpdateRequest)
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = models.Bookmark.T
         db.execute(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 UPDATE {table}
                 SET {title} = %(title)s,
@@ -96,10 +96,10 @@ def api_archive():
     req = webserver.request(rpc.ArchiveRequest)
     time_archived = timehelper.now()
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = models.Bookmark.T
         title = db.fetch_val(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 UPDATE {table}
                 SET {reason_archived} = %(reason_archived)s,
@@ -136,10 +136,10 @@ def api_archive():
 def api_unarchive():
     req = webserver.request(rpc.UnarchiveRequest)
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = models.Bookmark.T
         title = db.fetch_val(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 UPDATE {table}
                 SET {reason_archived} = '',
@@ -168,10 +168,10 @@ def api_unarchive():
 def api_mark_no_auto_prune():
     req = webserver.request(rpc.MarkNoAutoPruneRequest)
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = models.Bookmark.T
         title = db.fetch_val(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 UPDATE {table}
                 SET no_auto_prune = true

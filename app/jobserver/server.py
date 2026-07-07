@@ -49,8 +49,8 @@ class ChildResult:
 
 def run_loop(
     *,
-    wakeup_interval: datetime.timedelta,
-    log_interval: datetime.timedelta,
+    wakeup_interval: dt.timedelta,
+    log_interval: dt.timedelta,
     rpc_port: int,
 ) -> None:
     try:
@@ -350,7 +350,7 @@ def sigterm_handler(_signum: int, _frame: Any) -> None:
 
 
 def get_jobs_to_run(
-    state: State, ephemeral_state: EphemeralState, now: datetime.datetime
+    state: State, ephemeral_state: EphemeralState, now: dt.datetime
 ) -> List[Job]:
     r: List[Job] = []
     for job in state.jobs:
@@ -448,15 +448,15 @@ def prepare_env(job: Job) -> Dict[str, str]:
 
 
 def prepare_cmd(args: List[str]) -> List[str]:
-    today = datetime.date.today()
+    today = dt.date.today()
     return [substitute_special(arg, today=today) for arg in args]
 
 
-def substitute_special(arg: str, *, today: datetime.date) -> str:
+def substitute_special(arg: str, *, today: dt.date) -> str:
     if arg == "[[date]]":
         return today.isoformat()
     elif arg == "[[yesterday]]":
-        return (today + datetime.timedelta(days=-1)).isoformat()
+        return (today + dt.timedelta(days=-1)).isoformat()
     elif arg == "[[lastmonth]]":
         return timehelper.last_month(today).isoformat()
     else:

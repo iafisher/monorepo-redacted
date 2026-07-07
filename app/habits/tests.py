@@ -1,6 +1,6 @@
 from iafisher_foundation import timehelper
 from iafisher_foundation.prelude import *
-from lib import command, pdb
+from lib import command, pgdb
 from lib.testing import *
 
 from . import models
@@ -10,10 +10,10 @@ from .main import cmd
 
 class Test(BaseWithDatabase):
     def test_sql_queries(self):
-        with pdb.connect() as db:
+        with pgdb.connect() as db:
             habit_name = "Read"
             db.execute(
-                pdb.SQL(
+                pgdb.SQL(
                     "INSERT INTO {}({}, {}, {}, {}) VALUES(%(name)s, %(points)s, %(category)s, %(time_created)s)"
                 ).format(
                     models.Habit.T.table,
@@ -35,12 +35,10 @@ class Test(BaseWithDatabase):
             self.assertEqual(habit_name, habits[0].name)
 
             create_habit_entry(
-                db, date=datetime.date(2025, 7, 26), habit=habit_name, points=1
+                db, date=dt.date(2025, 7, 26), habit=habit_name, points=1
             )
 
-            entries = fetch_habit_entries(
-                db, last_filter=datetime.timedelta(days=365 * 50)
-            )
+            entries = fetch_habit_entries(db, last_filter=dt.timedelta(days=365 * 50))
             self.assertEqual(1, len(entries))
             self.assertEqual(habit_name, entries[0].habit)
 

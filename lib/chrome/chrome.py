@@ -55,9 +55,9 @@ def count_bookmarks(bookmarks_dict: Dict[str, Any]) -> int:
     return count
 
 
-def parse_timestamp(t: int) -> datetime.datetime:
+def parse_timestamp(t: int) -> dt.datetime:
     # Chrome represents timestamps as 'microseconds since Jan. 1, 1601'
     # https://stackoverflow.com/questions/51343828/
-    return datetime.datetime(1601, 1, 1, tzinfo=timehelper.TZ_NYC) + datetime.timedelta(
+    return dt.datetime(1601, 1, 1, tzinfo=timehelper.TZ_NYC) + dt.timedelta(
         microseconds=t
     )

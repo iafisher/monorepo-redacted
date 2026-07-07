@@ -1,5 +1,3 @@
-from typing import Annotated
-
 import markdown
 import yaml
 from markdown.extensions import Extension

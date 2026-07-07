@@ -6,7 +6,7 @@ import statistics
 import subprocess
 import time
 import urllib.parse
-from typing import Annotated, Awaitable
+from typing import Awaitable
 
 from iafisher_foundation.prelude import *
 from iafisher_foundation.scripting import *
@@ -160,7 +160,7 @@ def main_load_test(
     n: Annotated[int, command.Extra(help="how many simultaneous requests to make")] = 1,
     trials: Annotated[int, command.Extra(help="repeat this many times")] = 1,
     gap: Annotated[
-        Optional[datetime.timedelta],
+        Optional[dt.timedelta],
         command.Extra(
             converter=humanunits.parse_duration, help="wait this long between requests"
         ),
@@ -175,7 +175,7 @@ async def do_load_test(
     keyword: str,
     n: int,
     trials: int,
-    gap: Optional[datetime.timedelta],
+    gap: Optional[dt.timedelta],
 ) -> None:
     firsts: List[int] = []
     firsts_unqueued: List[int] = []

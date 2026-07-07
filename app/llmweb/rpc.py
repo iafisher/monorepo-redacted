@@ -9,6 +9,7 @@ class Message(kgjson.Base):
     message_id: int
     role: str
     content: str
+    summary: str
     vote: str
     time_created: datetime.datetime
 

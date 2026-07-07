@@ -1,5 +1,4 @@
 import json
-from typing import Annotated
 
 from iafisher_foundation import colors, tabular
 from iafisher_foundation.prelude import *

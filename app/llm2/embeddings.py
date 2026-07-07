@@ -1,10 +1,8 @@
-from typing import Annotated
-
 import openai
 
 from iafisher_foundation import tabular, timehelper
 from iafisher_foundation.prelude import *
-from lib import command, obsidian, pdb, secrets
+from lib import command, obsidian, pgdb, secrets
 
 
 def main_create_obsidian_journal(
@@ -17,7 +15,7 @@ def main_create_obsidian_journal(
     set_openai_api_key()
 
     vault = obsidian.Vault.main()
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         existing_documents = fetch_documents(db)
         for journal_path in sorted(list_journal_paths(vault), reverse=True):
             document_name = journal_path.relative_to(vault.path()).as_posix()
@@ -52,14 +50,14 @@ def main_create_obsidian_journal(
                 insert_chunks(db, chunks_to_insert)
 
 
-def fetch_documents(db: pdb.Connection) -> Set[str]:
+def fetch_documents(db: pgdb.Connection) -> Set[str]:
     rows = db.fetch_all(
-        "SELECT DISTINCT(document_name) FROM llm_embedding_documents", t=pdb.tuple_row
+        "SELECT DISTINCT(document_name) FROM llm_embedding_documents", t=pgdb.tuple_row
     )
     return set(row[0] for row in rows)
 
 
-def delete_embeddings_for_document(db: pdb.Connection, document_name: str) -> None:
+def delete_embeddings_for_document(db: pgdb.Connection, document_name: str) -> None:
     db.execute(
         "DELETE FROM llm_embedding_documents WHERE document_name = %s", (document_name,)
     )
@@ -77,7 +75,7 @@ def calculate_embedding(content: str) -> List[float]:
     return response.data[0].embedding
 
 
-def insert_document(db: pdb.Connection, *, name: str, category: str) -> int:
+def insert_document(db: pgdb.Connection, *, name: str, category: str) -> int:
     return db.fetch_one(
         """
         INSERT INTO llm_embedding_documents (document_name, document_category, time_created)
@@ -85,11 +83,11 @@ def insert_document(db: pdb.Connection, *, name: str, category: str) -> int:
         RETURNING document_id
         """,
         dict(name=name, category=category, time_created=timehelper.now()),
-        t=pdb.tuple_row,
+        t=pgdb.tuple_row,
     )[0]
 
 
-def insert_chunks(db: pdb.Connection, chunks_to_insert: List[Dict[str, Any]]) -> None:
+def insert_chunks(db: pgdb.Connection, chunks_to_insert: List[Dict[str, Any]]) -> None:
     db.execute_many(
         """
         INSERT INTO llm_embedding_chunks (document, chunk_title, chunk_content, embedding)
@@ -104,7 +102,7 @@ def main_search(words: List[str], *, limit: int = 5) -> None:
 
     query = " ".join(words)
     query_embedding = calculate_embedding(query)
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         results = search_embeddings(db, query_embedding, limit=limit)
         table = tabular.Table()
         table.header(["name", "category", "title", "similarity"])
@@ -114,7 +112,7 @@ def main_search(words: List[str], *, limit: int = 5) -> None:
 
 
 def search_embeddings(
-    db: pdb.Connection, query_embedding: List[float], *, limit: int
+    db: pgdb.Connection, query_embedding: List[float], *, limit: int
 ) -> List[Tuple[str, str, str, float]]:
     return db.fetch_all(
         """
@@ -125,7 +123,7 @@ def search_embeddings(
         LIMIT %(limit)s
         """,
         dict(embedding=query_embedding, limit=limit),
-        t=pdb.tuple_row,
+        t=pgdb.tuple_row,
     )
 
 

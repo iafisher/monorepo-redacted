@@ -7,7 +7,7 @@ from psycopg import sql
 @dataclass
 class JobRun:
     name: str
-    time_run: datetime.datetime
+    time_run: dt.datetime
     exit_status: Optional[int]
     wall_time_secs: Optional[float]
     user_time_secs: Optional[float]

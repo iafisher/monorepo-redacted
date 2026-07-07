@@ -1,7 +1,7 @@
 from app.llm2.code import Hooks
 from iafisher_foundation.prelude import *
 from iafisher_foundation.scripting import sh1
-from lib import githelper, llm, pdb
+from lib import githelper, llm, pgdb
 
 
 SYSTEM_PROMPT = """\
@@ -27,7 +27,7 @@ You are typically invoked non-interactively.
 def main(commit_hash: str, *, model: str = llm.CLAUDE_SONNET_4_6) -> None:
     root_directory = githelper.get_root(pathlib.Path("."))
     diff = sh1(f"git -C {root_directory} show {commit_hash} -U5")
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         model_response = llm.oneshot(
             db,
             diff,

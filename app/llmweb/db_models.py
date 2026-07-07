@@ -9,7 +9,7 @@ class Conversation:
     conversation_id: int
     llm_conversation_id: Optional[int]
     title: str
-    time_created: datetime.datetime
+    time_created: dt.datetime
 
     class T:
         conversation_id = sql.Identifier("conversation_id")
@@ -53,8 +53,9 @@ class Message:
     conversation_id: Optional[int]
     role: str
     content: str
+    summary: str
     vote: str
-    time_created: datetime.datetime
+    time_created: dt.datetime
 
     class T:
         message_id = sql.Identifier("message_id")
@@ -65,6 +66,8 @@ class Message:
         role_ = "role"
         content = sql.Identifier("content")
         content_ = "content"
+        summary = sql.Identifier("summary")
+        summary__ = "summary"
         vote = sql.Identifier("vote")
         vote_ = "vote"
         time_created = sql.Identifier("time_created")
@@ -78,6 +81,7 @@ class Message:
                 conversation_id,
                 role,
                 content,
+                summary,
                 vote,
                 time_created,
             ]
@@ -87,6 +91,7 @@ class Message:
                 conversation_id,
                 role,
                 content,
+                summary,
                 vote,
                 time_created,
             ]
@@ -96,6 +101,7 @@ class Message:
                 sql.Placeholder("conversation_id"),
                 sql.Placeholder("role"),
                 sql.Placeholder("content"),
+                sql.Placeholder("summary"),
                 sql.Placeholder("vote"),
                 sql.Placeholder("time_created"),
             ]

@@ -9,7 +9,7 @@ class EmbeddingDocument:
     document_id: int
     document_name: str
     document_category: str
-    time_created: Optional[datetime.datetime]
+    time_created: Optional[dt.datetime]
 
     class T:
         document_id = sql.Identifier("document_id")

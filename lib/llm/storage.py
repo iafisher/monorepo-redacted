@@ -1,18 +1,18 @@
 import json
 
 from iafisher_foundation.prelude import *
-from lib import pdb
+from lib import pgdb
 from .common import TokenUsage
 
 
 def create_conversation(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     *,
     model: str,
     app_name: str,
     system_prompt: str,
     messages: List[StrDict],
-    now: datetime.datetime
+    now: dt.datetime
 ) -> int:
     return db.fetch_val(
         """
@@ -38,7 +38,7 @@ class Conversation:
     messages: List[StrDict]
 
 
-def fetch_conversation(db: pdb.Connection, conversation_id: int) -> Conversation:
+def fetch_conversation(db: pgdb.Connection, conversation_id: int) -> Conversation:
     return db.fetch_one(
         """
         SELECT conversation_id, model, system_prompt, messages
@@ -46,12 +46,12 @@ def fetch_conversation(db: pdb.Connection, conversation_id: int) -> Conversation
         WHERE conversation_id = %(conversation_id)s
         """,
         dict(conversation_id=conversation_id),
-        t=pdb.t(Conversation),
+        t=pgdb.t(Conversation),
     )
 
 
 def fork_conversation(
-    db: pdb.Connection, conversation_id: int, *, now: datetime.datetime
+    db: pgdb.Connection, conversation_id: int, *, now: dt.datetime
 ) -> Conversation:
     return db.fetch_one(
         """
@@ -62,11 +62,11 @@ def fork_conversation(
         RETURNING conversation_id, model, system_prompt, messages
         """,
         dict(conversation_id=conversation_id, now=now),
-        t=pdb.t(Conversation),
+        t=pgdb.t(Conversation),
     )
 
 
-def fetch_last_token_usage(db: pdb.Connection, conversation_id: int) -> TokenUsage:
+def fetch_last_token_usage(db: pgdb.Connection, conversation_id: int) -> TokenUsage:
     return db.fetch_one(
         """
         SELECT
@@ -82,16 +82,16 @@ def fetch_last_token_usage(db: pdb.Connection, conversation_id: int) -> TokenUsa
         LIMIT 1
         """,
         dict(conversation_id=conversation_id),
-        t=pdb.t(TokenUsage),
+        t=pgdb.t(TokenUsage),
     )
 
 
 def update_conversation(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     conversation_id: int,
     messages: List[StrDict],
     *,
-    now: datetime.datetime
+    now: dt.datetime
 ) -> None:
     db.execute(
         """
@@ -104,12 +104,12 @@ def update_conversation(
 
 
 def update_conversation_and_model(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     conversation_id: int,
     messages: List[StrDict],
     *,
     model: str,
-    now: datetime.datetime
+    now: dt.datetime
 ) -> None:
     db.execute(
         """
@@ -127,7 +127,7 @@ def update_conversation_and_model(
 
 
 def create_api_request(
-    db: pdb.Connection,
+    db: pgdb.Connection,
     conversation_id: int,
     *,
     model: str,
@@ -135,7 +135,7 @@ def create_api_request(
     response_json: str,
     is_error: bool,
     token_usage: TokenUsage,
-    now: datetime.datetime
+    now: dt.datetime
 ) -> int:
     return db.fetch_val(
         """

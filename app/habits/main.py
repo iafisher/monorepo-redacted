@@ -1,5 +1,4 @@
 import csv
-from typing import Annotated
 
 from app.habits import models
 from app.habits.common import (
@@ -10,7 +9,7 @@ from app.habits.common import (
 from app.habits.webserver import cmd as webserver_cmd
 from iafisher_foundation import tabular, timehelper
 from iafisher_foundation.prelude import *
-from lib import command, fzf, humanunits, pdb
+from lib import command, fzf, humanunits, pgdb
 
 
 def main_create(
@@ -21,11 +20,11 @@ def main_create(
     category: str = "",
     description: str = "",
 ) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         T = models.Habit.T
         time_created = timehelper.now()
         db.execute(
-            pdb.SQL(
+            pgdb.SQL(
                 """
                 INSERT INTO {table}({name}, {points}, {category}, {once_a_day}, {description}, {time_created})
                 VALUES (%(name)s, %(points)s, %(category)s, %(once_a_day)s, %(description)s, %(time_created)s)
@@ -53,14 +52,14 @@ def main_create(
 def main_entries_create(
     *,
     habit_name: Annotated[Optional[str], command.Extra(name="-habit")] = None,
-    date: Optional[datetime.date] = None,
+    date: Optional[dt.date] = None,
 ) -> None:
     if date is None:
-        today = datetime.date.today()
+        today = dt.date.today()
         date_options = get_date_options(today)
         date = fzf.select_map(date_options)
 
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         if habit_name is not None:
             habit = fetch_habit_by_name(db, habit_name)
         else:
@@ -72,30 +71,30 @@ def main_entries_create(
     print("Created {habit.name!r} entry for {date}.")
 
 
-def get_date_options(today: datetime.date) -> List[Tuple[str, datetime.date]]:
-    r: List[Tuple[str, datetime.date]] = []
+def get_date_options(today: dt.date) -> List[Tuple[str, dt.date]]:
+    r: List[Tuple[str, dt.date]] = []
     r.append(("today", today))
-    r.append(("yesterday", (today - datetime.timedelta(days=1))))
+    r.append(("yesterday", (today - dt.timedelta(days=1))))
     for days in range(2, 8):
-        date = today - datetime.timedelta(days=days)
+        date = today - dt.timedelta(days=days)
         r.append((date.isoformat(), date))
     return r
 
 
-def fetch_habit_by_name(db: pdb.Connection, name: str) -> models.Habit:
+def fetch_habit_by_name(db: pgdb.Connection, name: str) -> models.Habit:
     sql_star = models.Habit.T.star
     table_name = models.Habit.T.table
     return db.fetch_one(
-        pdb.SQL("SELECT {} FROM {} WHERE name = %s").format(sql_star, table_name),
+        pgdb.SQL("SELECT {} FROM {} WHERE name = %s").format(sql_star, table_name),
         (name,),
-        t=pdb.t(models.Habit),
+        t=pgdb.t(models.Habit),
     )
 
 
 def main_entries_list(
     *,
     last_filter: Annotated[
-        datetime.timedelta,
+        dt.timedelta,
         command.Extra(
             name="-last",
             help="filter to timespan",
@@ -104,7 +103,7 @@ def main_entries_list(
         ),
     ],
 ) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         habit_entry_models = fetch_habit_entries(db, last_filter)
 
     habit_entry_models.sort(key=lambda entry: entry.date)
@@ -119,7 +118,7 @@ def main_entries_list(
 
 
 def main_list() -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         habits = fetch_habits(db)
 
     table = tabular.Table()
@@ -130,7 +129,7 @@ def main_list() -> None:
 
 
 def main_old_import(*, habits_csv: str, entries_csv: str) -> None:
-    with pdb.connect() as db:
+    with pgdb.connect() as db:
         # Export with:
         #
         #   .mode csv

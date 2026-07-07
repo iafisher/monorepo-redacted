@@ -22,7 +22,6 @@ from .scheduler import (
     MonthlySchedule,
     Schedule,
     WeeklySchedule,
-    mins,
 )
 
 MINS_IN_DAY = 60 * 24
@@ -30,13 +29,11 @@ MINS_IN_DAY = 60 * 24
 TEST_PORT = 10500
 
 
-def add_real_clock_time(
-    dt: datetime.datetime, delta: datetime.timedelta
-) -> datetime.datetime:
-    if dt.tzinfo is None:
-        return dt + delta
-    dt_utc = dt.astimezone(datetime.timezone.utc)
-    return (dt_utc + delta).astimezone(dt.tzinfo)
+def add_real_clock_time(dtime: dt.datetime, delta: dt.timedelta) -> dt.datetime:
+    if dtime.tzinfo is None:
+        return dtime + delta
+    dtime_utc = dtime.astimezone(datetime.timezone.utc)
+    return (dtime_utc + delta).astimezone(dtime.tzinfo)
 
 
 class Test(Base, TestCase):
@@ -54,7 +51,7 @@ class Test(Base, TestCase):
 
         schedule = Schedule.deserialize(dict(daily=dict(times_of_day=["11am"])))
         self.assertEqual(
-            DailySchedule(times_of_day=[datetime.time(11, 0)]), schedule.get_schedule()
+            DailySchedule(times_of_day=[dt.time(11, 0)]), schedule.get_schedule()
         )
 
     def test_scheduler_calculate_next_run_time(self):
@@ -62,9 +59,7 @@ class Test(Base, TestCase):
             schedule: BaseSchedule,
             n: int = 5,
             wakeup_interval_mins: int = 1,
-            start_datetime: datetime.datetime = datetime.datetime(
-                2025, 11, 22, hour=0, minute=0
-            ),
+            start_datetime: dt.datetime = dt.datetime(2025, 11, 22, hour=0, minute=0),
         ) -> str:
             now = start_datetime
             builder: List[str] = []
@@ -78,15 +73,15 @@ class Test(Base, TestCase):
                 else:
                     builder.append(f"{weekday} {now}: next at {next_scheduled_time}")
                 now = max(
-                    add_real_clock_time(next_scheduled_time, mins(1)),
-                    add_real_clock_time(now, mins(wakeup_interval_mins)),
+                    add_real_clock_time(next_scheduled_time, minutes(1)),
+                    add_real_clock_time(now, minutes(wakeup_interval_mins)),
                 )
             return "\n".join(builder)
 
         schedule = HourlySchedule(
             interval_mins=60,
-            start_time_of_day=datetime.time(4, 0),
-            end_time_of_day=datetime.time(10, 0),
+            start_time_of_day=dt.time(4, 0),
+            end_time_of_day=dt.time(10, 0),
         )
         self.maxDiff = None
         self.assertExpectedInline(
@@ -137,8 +132,8 @@ Sat 2025-11-29 12:01:00: next at 2025-11-30 00:00:00""",
 
         schedule = HourlySchedule(
             interval_mins=30,
-            start_time_of_day=datetime.time(9, 0),
-            end_time_of_day=datetime.time(9, 30),
+            start_time_of_day=dt.time(9, 0),
+            end_time_of_day=dt.time(9, 30),
             days_of_week=["mon", "wed"],
         )
         self.assertExpectedInline(
@@ -153,9 +148,7 @@ Mon 2025-12-01 09:01:00: next at 2025-12-01 09:30:00
 Mon 2025-12-01 09:31:00: next at 2025-12-03 09:00:00""",
         )
 
-        schedule = DailySchedule(
-            times_of_day=[datetime.time(4, 0), datetime.time(13, 30)]
-        )
+        schedule = DailySchedule(times_of_day=[dt.time(4, 0), dt.time(13, 30)])
         self.assertExpectedInline(
             timetable(schedule),
             """\
@@ -167,7 +160,7 @@ Sun 2025-11-23 13:31:00: next at 2025-11-24 04:00:00""",
         )
 
         schedule = WeeklySchedule(
-            times_of_day=[datetime.time(22, 0)], days_of_week=["THURSDAY", "monday"]
+            times_of_day=[dt.time(22, 0)], days_of_week=["THURSDAY", "monday"]
         )
         # 2025-11-22 is a Saturday, so next jobs should run on 2025-11-24 (Monday)
         # and 2025-11-27 (Thursday).
@@ -181,9 +174,7 @@ Mon 2025-12-01 22:01:00: next at 2025-12-04 22:00:00
 Thu 2025-12-04 22:01:00: next at 2025-12-08 22:00:00""",
         )
 
-        schedule = MonthlySchedule(
-            times_of_day=[datetime.time(1, 0)], days_of_month=[1, 31]
-        )
+        schedule = MonthlySchedule(times_of_day=[dt.time(1, 0)], days_of_month=[1, 31])
         self.assertExpectedInline(
             timetable(schedule),
             """\
@@ -197,12 +188,12 @@ Thu 2026-01-01 01:01:00: next at 2026-01-31 01:00:00""",
         # Q: What happens in February if the job runs on the 29th, 30th, and 31st of the month?
         # A: The job runs once at the end of February, on the 28th.
         schedule = MonthlySchedule(
-            times_of_day=[datetime.time(1, 0)], days_of_month=[29, 30, 31]
+            times_of_day=[dt.time(1, 0)], days_of_month=[29, 30, 31]
         )
         self.assertExpectedInline(
             timetable(
                 schedule,
-                start_datetime=datetime.datetime(2025, 2, 28, hour=0, minute=0),
+                start_datetime=dt.datetime(2025, 2, 28, hour=0, minute=0),
             ),
             """\
 Fri 2025-02-28 00:00:00: next at 2025-02-28 01:00:00
@@ -213,14 +204,12 @@ Mon 2025-03-31 01:01:00: next at 2025-04-29 01:00:00""",
         )
 
         # DST: falling back
-        schedule = DailySchedule(
-            times_of_day=[datetime.time(1, 30), datetime.time(1, 45)]
-        )
+        schedule = DailySchedule(times_of_day=[dt.time(1, 30), dt.time(1, 45)])
         self.assertExpectedInline(
             timetable(
                 schedule,
                 n=4,
-                start_datetime=datetime.datetime(
+                start_datetime=dt.datetime(
                     2025, 11, 2, hour=0, minute=0, tzinfo=timehelper.TZ_NYC
                 ),
             ),
@@ -232,12 +221,12 @@ Mon 2025-11-03 01:31:00-05:00: next at 2025-11-03 01:45:00-05:00""",
         )
 
         # DST: springing forward
-        schedule = DailySchedule(times_of_day=[datetime.time(2, 30)])
+        schedule = DailySchedule(times_of_day=[dt.time(2, 30)])
         self.assertExpectedInline(
             timetable(
                 schedule,
                 n=3,
-                start_datetime=datetime.datetime(
+                start_datetime=dt.datetime(
                     2025, 3, 9, hour=0, minute=0, tzinfo=timehelper.TZ_NYC
                 ),
             ),
@@ -265,7 +254,7 @@ Mon 2025-03-10 02:31:00-04:00: next at 2025-03-11 02:30:00-04:00""",
                 name="testjob",
                 cmd=["echo", "hello"],
                 schedule=Schedule(hourly=HourlySchedule(interval_mins=1)),
-                date_added=datetime.date(2025, 1, 1),
+                date_added=dt.date(2025, 1, 1),
                 enabled=True,
                 run_now=True,
                 machines=["laptop"],
@@ -276,7 +265,7 @@ Mon 2025-03-10 02:31:00-04:00: next at 2025-03-11 02:30:00-04:00""",
                 name="testjob2",
                 cmd=["echo", "[[date]]"],
                 schedule=Schedule(hourly=HourlySchedule(interval_mins=1)),
-                date_added=datetime.date(2025, 1, 1),
+                date_added=dt.date(2025, 1, 1),
                 enabled=True,
                 run_now=True,
             )
@@ -425,7 +414,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  0            XXX
                 name="testjob",
                 cmd=["echo", "hello"],
                 schedule=Schedule(hourly=HourlySchedule(interval_mins=1)),
-                date_added=datetime.date(2025, 1, 1),
+                date_added=dt.date(2025, 1, 1),
                 enabled=True,
                 run_now=True,
                 machines=["laptop"],

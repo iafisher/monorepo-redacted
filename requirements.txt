@@ -128,7 +128,7 @@ httpx==0.28.1
     #   openai
 huggingface-hub==1.1.5
     # via tokenizers
-iafisher-foundation==0.1.9
+iafisher-foundation==0.1.10
     # via -r requirements.in
 idna==3.10
     # via

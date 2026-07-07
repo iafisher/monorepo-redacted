@@ -6,6 +6,7 @@
         { "name": "message_id", "type": "int" },
         { "name": "role", "type": "string" },
         { "name": "content", "type": "string" },
+        { "name": "summary", "type": "string" },
         { "name": "vote", "type": "string" },
         { "name": "time_created", "type": "datetime" }
       ]
