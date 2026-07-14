@@ -28,7 +28,8 @@ def get_path_for_mode(mode: kgenv.Mode) -> pathlib.Path:
 def kv_get(db: Connection, key: str) -> Optional[str]:
     cursor = db.cursor()
     cursor.execute("SELECT value FROM kv WHERE key = :key", dict(key=key))
-    return cursor.fetchone()[0]
+    row_opt = cursor.fetchone()
+    return row_opt[0] if row_opt is not None else None
 
 
 def kv_set(db: Connection, key: str, value: str) -> None:

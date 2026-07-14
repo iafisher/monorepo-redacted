@@ -1,4 +1,6 @@
 import smtplib
+from email import encoders as email_encoders
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -8,7 +10,22 @@ from lib import command, dblog, kgenv, secrets
 from .redacted import *
 
 
-def send_email(subject: str, body: str, recipients: List[str], *, html: bool) -> None:
+@dataclass
+class FileAttachment:
+    filepath: pathlib.Path
+    maintype: str
+    subtype: str
+    override_filename: Optional[str] = None
+
+
+def send_email(
+    subject: str,
+    body: str,
+    recipients: List[str],
+    *,
+    html: bool,
+    file_attachments: Optional[List[FileAttachment]] = None,
+) -> None:
     recipients_string = ", ".join(recipients)
     match kgenv.get_mode():
         case "test":
@@ -24,6 +41,17 @@ def send_email(subject: str, body: str, recipients: List[str], *, html: bool) ->
     msg["To"] = recipients_string
     msg["Subject"] = subject
     msg.attach(MIMEText(body, "html" if html else "plain"))
+
+    for attachment in opt_or(file_attachments, []):
+        part = MIMEBase(attachment.maintype, attachment.subtype)
+        part.set_payload(attachment.filepath.read_bytes())
+        email_encoders.encode_base64(part)
+        part.add_header(
+            "Content-Disposition",
+            "attachment",
+            filename=opt_or(attachment.override_filename, attachment.filepath.name),
+        )
+        msg.attach(part)
 
     with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
         password = secrets.get_or_raise("FASTMAIL_PASSWORD")
