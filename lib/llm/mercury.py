@@ -1,7 +1,7 @@
 import json
 from typing import Literal
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import kghttp, secrets
 
 from . import universal
@@ -75,7 +75,9 @@ class Mercury(APIWrapper):
             json=payload,
         ).json()
 
-        thinking = response.get("reasoning_summary", {}).get("content", "")
+        thinking = opt_or(
+            opt_or(response.get("reasoning_summary"), {}).get("content"), ""
+        )
         if thinking != "" and thinking is not None:
             hooks.on_thinking_delta(thinking)
 

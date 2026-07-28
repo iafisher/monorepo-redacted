@@ -1,7 +1,7 @@
 from typing import Literal
 
-from iafisher_foundation import tabular
-from iafisher_foundation.prelude import *
+from iafisher import tabular
+from iafisher.prelude import *
 
 
 @dataclass

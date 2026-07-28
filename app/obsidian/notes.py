@@ -1,7 +1,7 @@
 import unicodedata
 
 from lib import command, obsidian
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 def main_create(

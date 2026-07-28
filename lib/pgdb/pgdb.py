@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Iterable, TypeVar
 
 from lib import kgenv
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 import psycopg
 from psycopg import sql

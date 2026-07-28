@@ -1,7 +1,7 @@
 from flask import render_template_string
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import localdb, oshelper, webserver
 
 from . import rpc_web as rpc

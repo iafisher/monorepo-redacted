@@ -1,7 +1,7 @@
 import os
 
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import sh0
+from iafisher.prelude import *
+from iafisher.scripting import sh0
 from lib import command
 
 

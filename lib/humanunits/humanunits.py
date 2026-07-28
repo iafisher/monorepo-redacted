@@ -1,7 +1,7 @@
 import calendar
 import math
 from decimal import Decimal
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 _time_pattern = lazy_re(
     r"^\s*([0-9]{1,2})(:[0-9]{2})?(:[0-9]{2})?\s*(am|pm)?\s*$", re.IGNORECASE

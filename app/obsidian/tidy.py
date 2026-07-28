@@ -1,8 +1,8 @@
 import contextlib
 from collections import defaultdict
 
-from iafisher_foundation import colors, timehelper
-from iafisher_foundation.prelude import *
+from iafisher import colors, timehelper
+from iafisher.prelude import *
 from lib import command, githelper, obsidian
 
 

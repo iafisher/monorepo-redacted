@@ -5,7 +5,7 @@ import pydantic_core
 from google import genai
 from google.genai import errors as google_errors, types as google_types
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import iterhelper, secrets
 from . import universal
 from .base import (
@@ -20,9 +20,9 @@ from .base import (
     ToolUseResponse,
 )
 from .common import IteratorWithDelay, TokenUsage, load_mock_turn
-from .model_names import GEMINI_2_5_PRO, GEMINI_MOCK_WEB_SEARCH, MODEL_FAMILY_GEMINI
+from .model_names import GeminiModel, MODEL_FAMILY_GEMINI
 
-MOCK_MODELS = (GEMINI_MOCK_WEB_SEARCH,)
+MOCK_MODELS = (GeminiModel.GEMINI_MOCK_WEB_SEARCH,)
 
 
 class Gemini(APIWrapper):
@@ -41,7 +41,7 @@ class Gemini(APIWrapper):
     MAX_TOKENS_FINISH_REASON = "MAX_TOKENS"
 
     def __init__(self, model: str) -> None:
-        self.model = model
+        self.model = GeminiModel(model)
         api_key = secrets.get_or_raise("GEMINI_API_KEY")
         self.client = genai.Client(api_key=api_key)
 
@@ -210,7 +210,7 @@ class Gemini(APIWrapper):
                 )
         else:
             if reasoning is None:
-                if self.model == GEMINI_2_5_PRO:
+                if self.model == GeminiModel.GEMINI_2_5_PRO:
                     if options.strict:
                         raise ModelMisconfigurationError(
                             "`reasoning` parameter was None, but reasoning cannot be turned off "
@@ -228,17 +228,17 @@ class Gemini(APIWrapper):
                 if reasoning.effort == "dynamic":
                     thinking_budget = -1
                 elif reasoning.effort == "low":
-                    if self.model == GEMINI_2_5_PRO:
+                    if self.model == GeminiModel.GEMINI_2_5_PRO:
                         thinking_budget = 10900
                     else:
                         thinking_budget = 8192
                 elif reasoning.effort == "medium":
-                    if self.model == GEMINI_2_5_PRO:
+                    if self.model == GeminiModel.GEMINI_2_5_PRO:
                         thinking_budget = 16384
                     else:
                         thinking_budget = 12288
                 else:
-                    if self.model == GEMINI_2_5_PRO:
+                    if self.model == GeminiModel.GEMINI_2_5_PRO:
                         thinking_budget = 32768
                     else:
                         thinking_budget = 24576

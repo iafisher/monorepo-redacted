@@ -2,8 +2,8 @@ import time
 from typing import NewType
 
 from app.wikipedia.common import USER_AGENT
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import command, githelper, kgenv, kghttp, kgjson, llm, pgdb, simplemail
 
 
@@ -261,7 +261,7 @@ _mutex = command.Mutex()
 
 def main_nightly(
     *,
-    model: str = llm.GPT_5_2,
+    model: str = llm.GptModel.GPT_5_LATEST.value,
     category: Annotated[
         Optional[str],
         command.Extra(help="fetch a random article in this category", mutex=_mutex),
@@ -370,7 +370,7 @@ def _make_email(
 def main_test(
     article: str,
     *,
-    model: str = llm.CLAUDE_HAIKU_4_5,
+    model: str = llm.ClaudeModel.HAIKU_LATEST.value,
     save: Annotated[
         Optional[pathlib.Path],
         command.Extra(help="save the raw wikitext output to this file"),
@@ -442,7 +442,10 @@ def print_diff(wikitext: str, edited_text: str) -> None:
 
 
 def tidy(
-    text: str, *, model: str = llm.CLAUDE_HAIKU_4_5, max_turn_count: int = 10
+    text: str,
+    *,
+    model: str = llm.ClaudeModel.HAIKU_LATEST.value,
+    max_turn_count: int = 10,
 ) -> Tuple[str, llm.ModelResponse]:
     with pgdb.connect(transaction_mode=pgdb.TransactionMode.AUTOCOMMIT) as db:
         conversation = llm.Conversation.start(

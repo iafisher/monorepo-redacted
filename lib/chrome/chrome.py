@@ -1,7 +1,7 @@
 import json
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 
 
 BOOKMARKS_PATH = (

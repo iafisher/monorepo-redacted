@@ -8,7 +8,7 @@ from typing import Self
 
 import requests
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib.testing import *
 
 from .kghttp import KgHttpError, RetryConfig, _request

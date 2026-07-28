@@ -1,6 +1,6 @@
 from app.llm2.code import Hooks
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import sh1
+from iafisher.prelude import *
+from iafisher.scripting import sh1
 from lib import githelper, llm, pgdb
 
 
@@ -24,7 +24,7 @@ You are typically invoked non-interactively.
 """
 
 
-def main(commit_hash: str, *, model: str = llm.CLAUDE_SONNET_4_6) -> None:
+def main(commit_hash: str, *, model: str = llm.ClaudeModel.SONNET_LATEST.value) -> None:
     root_directory = githelper.get_root(pathlib.Path("."))
     diff = sh1(f"git -C {root_directory} show {commit_hash} -U5")
     with pgdb.connect() as db:

@@ -7,8 +7,8 @@ from app.habits.common import (
     fetch_habits,
 )
 from app.habits.webserver import cmd as webserver_cmd
-from iafisher_foundation import tabular, timehelper
-from iafisher_foundation.prelude import *
+from iafisher import tabular, timehelper
+from iafisher.prelude import *
 from lib import command, fzf, humanunits, pgdb
 
 

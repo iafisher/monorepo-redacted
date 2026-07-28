@@ -1,7 +1,7 @@
 import json
 
-from iafisher_foundation import colors, tabular
-from iafisher_foundation.prelude import *
+from iafisher import colors, tabular
+from iafisher.prelude import *
 from lib import command, githelper, obsidian
 
 

@@ -5,7 +5,7 @@ from typing import Literal, Self
 
 import requests
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 class KgHttpError(KgError):

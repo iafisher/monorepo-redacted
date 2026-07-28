@@ -1,4 +1,4 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib.testing import *
 
 from .humanunits import parse_bytes, parse_duration, parse_time, to_bytes

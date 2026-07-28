@@ -6,8 +6,8 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.history import FileHistory
 
-from iafisher_foundation import colors, tabular
-from iafisher_foundation.prelude import *
+from iafisher import colors, tabular
+from iafisher.prelude import *
 from lib import kgenv, llm, pgdb
 from . import commanddef
 from .commanddef import CommandDef

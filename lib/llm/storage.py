@@ -1,6 +1,6 @@
 import json
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import pgdb
 from .common import TokenUsage
 

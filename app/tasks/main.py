@@ -1,5 +1,5 @@
-from iafisher_foundation.prelude import *
-from iafisher_foundation import tabular, timehelper
+from iafisher.prelude import *
+from iafisher import tabular, timehelper
 from lib import command, pgdb, pushover
 
 

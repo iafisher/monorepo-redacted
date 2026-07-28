@@ -12,8 +12,8 @@ from app.llm2.commanddef import CommandDef
 from app.llm2.code_alone import get_request_dir, Request as CodeAloneRequest
 from app.llm2.redacted import *
 from app.llmweb import db_models, rpc
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *  # noqa: F401
+from iafisher import timehelper
+from iafisher.prelude import *  # noqa: F401
 from lib import kgjson, llm, pgdb, webserver
 
 
@@ -131,7 +131,7 @@ def api_conversation(conversation_id: int):
 @app.route("/api/start", methods=["POST"])
 def api_start():
     rpc_request = webserver.request(rpc.StartRequest)
-    model_name = rpc_request.model or llm.CLAUDE_SONNET_4_6
+    model_name = rpc_request.model or llm.ClaudeModel.SONNET_LATEST
 
     try:
         model_name = llm.canonicalize_model_name(model_name)
@@ -421,7 +421,7 @@ def api_prompt():
                 summary_response = llm.oneshot(
                     db,
                     response.output_text,
-                    model=llm.GPT_5_NANO,
+                    model=llm.GptModel.GPT_NANO_LATEST,
                     system_prompt="Summarize the message in 1-3 sentences.",
                     app_name="llmweb",
                     options=llm.InferenceOptions.fast(),

@@ -1,8 +1,8 @@
 from flask import render_template_string
 
 from app.bookmarks import models, rpc
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *  # noqa: F401
+from iafisher import timehelper
+from iafisher.prelude import *  # noqa: F401
 from lib import dblog, pgdb, webserver
 
 

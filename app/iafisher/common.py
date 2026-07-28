@@ -1,5 +1,5 @@
 from lib import secrets
-from iafisher_foundation.prelude import *  # noqa: F401
+from iafisher.prelude import *  # noqa: F401
 
 
 HTTP_API_KEY_HEADER = "X-Iafisher-Api-Key"

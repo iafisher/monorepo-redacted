@@ -1,6 +1,6 @@
 from app.llm2 import chatloop
 from app.llm2.common import flag_to_reasoning_v3
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import llm
 
 from .redacted import *
@@ -20,7 +20,7 @@ Your responses should be concise unless otherwise requested.
 
 def main(
     *,
-    model: str = llm.CLAUDE_SONNET_4_6,
+    model: str = llm.ClaudeModel.SONNET_LATEST.value,
     max_tokens: int = llm.MAX_TOKENS,
     temperature: float = 1.0,
     reasoning: str = "medium",

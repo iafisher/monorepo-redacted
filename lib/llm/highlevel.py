@@ -2,8 +2,8 @@ import random
 from decimal import Decimal
 from typing import Literal, Self
 
-from iafisher_foundation import colors, timehelper
-from iafisher_foundation.prelude import *
+from iafisher import colors, timehelper
+from iafisher.prelude import *
 from lib import pgdb
 
 from . import storage, universal

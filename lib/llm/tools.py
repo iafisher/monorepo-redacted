@@ -3,8 +3,8 @@ import subprocess
 from anthropic import types as anthropic_types
 from openai.types import responses as openai_types
 
-from iafisher_foundation import colors
-from iafisher_foundation.prelude import *
+from iafisher import colors
+from iafisher.prelude import *
 from lib import githelper
 from .base import BaseTool, ToolError
 

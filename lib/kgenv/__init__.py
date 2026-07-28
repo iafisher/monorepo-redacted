@@ -4,6 +4,7 @@ from .kgenv import (
     PLATFORM_LINUX,
     PLATFORM_MACOS,
     Mode,
+    assert_on_laptop,
     get_app_dir,
     get_app_name,
     get_code_dir,

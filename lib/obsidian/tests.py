@@ -2,7 +2,7 @@ import pprint
 
 from expecttest import TestCase
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib.testing import *
 
 from . import journal

@@ -6,7 +6,7 @@ import pydantic_core
 import tiktoken
 from openai.types.responses import ResponseStreamEvent
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import secrets
 from . import universal
 from .base import (
@@ -21,10 +21,10 @@ from .base import (
     ToolUseResponse,
 )
 from .common import IteratorWithDelay, TokenUsage, load_mock_turn
-from .model_names import GPT_5_MINI, GPT_MOCK_WEB_SEARCH, MODEL_FAMILY_GPT
+from .model_names import GptModel, MODEL_FAMILY_GPT
 
 
-MOCK_MODELS = (GPT_MOCK_WEB_SEARCH,)
+MOCK_MODELS = (GptModel.GPT_MOCK_WEB_SEARCH,)
 
 
 class GPT(APIWrapper):
@@ -48,7 +48,7 @@ class GPT(APIWrapper):
         temperature = options.temperature
         reasoning = options.reasoning
 
-        if self.model == GPT_5_MINI:
+        if self.model == GptModel.GPT_5_4_MINI:
             if options.strict:
                 raise ModelMisconfigurationError(
                     "The model does not support custom temperature.",

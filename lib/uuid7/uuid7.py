@@ -27,7 +27,7 @@ SOFTWARE.
 import time
 import uuid
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 def uuid7() -> uuid.UUID:

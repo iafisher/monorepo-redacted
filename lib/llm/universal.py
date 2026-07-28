@@ -1,7 +1,7 @@
 import json
 from typing import Literal
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 Role = Literal["user", "assistant"]

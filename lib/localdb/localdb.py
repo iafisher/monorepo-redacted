@@ -1,7 +1,7 @@
 import sqlite3
 
 from lib import kgenv
-from iafisher_foundation.prelude import *  # noqa: F401
+from iafisher.prelude import *  # noqa: F401
 
 
 Connection = sqlite3.Connection

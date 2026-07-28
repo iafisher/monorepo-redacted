@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from app.bookmarks.common import insert_bookmarks_filtering_duplicates
 from app.bookmarks.models import Bookmark
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import chrome, command, pgdb
 
 

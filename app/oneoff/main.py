@@ -1,5 +1,5 @@
 from lib import command
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 def main() -> None:

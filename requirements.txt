@@ -142,7 +142,7 @@ httpx==0.28.1
     #   openai
 huggingface-hub==1.1.5
     # via tokenizers
-iafisher-foundation==0.1.10
+iafisher==0.1.10
     # via -r requirements.in
 idna==3.10
     # via
@@ -213,6 +213,8 @@ packaging==25.0
     #   huggingface-hub
 pathspec==0.12.1
     # via black
+pdftotext==4.0.0
+    # via -r requirements.in
 pillow==12.2.0
     # via weasyprint
 platformdirs==4.3.8

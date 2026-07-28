@@ -3,8 +3,8 @@ import signal
 import subprocess
 import time
 
-from iafisher_foundation import colors, tabular, timehelper
-from iafisher_foundation.prelude import *
+from iafisher import colors, tabular, timehelper
+from iafisher.prelude import *
 from lib import command, fzf, humanunits, iterhelper, kgenv, localdb, oshelper
 
 from . import models, rpc, server, webserver

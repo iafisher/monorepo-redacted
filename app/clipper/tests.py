@@ -1,4 +1,4 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command
 from lib.testing import *
 
@@ -17,8 +17,8 @@ Usage: clipper SUBCMD
 Subcommands:
 
   check     . Download, convert to EPUB, and check format.
-  send      . Send a webpage directly to my Kindle.
-  weekly    . Send a bundle of articles to my Kindle weekly.
+  send      . Send individual articles to my Kindle.
+  weekly    . Send a weekly bundle of articles to my Kindle.
 
 
 ------------
@@ -34,7 +34,32 @@ Arguments:
 
 ------------
 
-Usage: clipper send ...
+Usage: clipper send SUBCMD
+
+  Send individual articles to my Kindle.
+
+Subcommands:
+
+  file    . Send a file directly to my Kindle.
+  url     . Send a webpage directly to my Kindle.
+
+
+------------
+
+Usage: clipper send file ...
+
+  Send a file directly to my Kindle.
+
+Arguments:
+
+  filepath
+  [-author ARG]
+  [-title ARG]     . (default: None)
+
+
+------------
+
+Usage: clipper send url ...
 
   Send a webpage directly to my Kindle.
 
@@ -49,12 +74,28 @@ Arguments:
 
 Usage: clipper weekly SUBCMD
 
-  Send a bundle of articles to my Kindle weekly.
+  Send a weekly bundle of articles to my Kindle.
 
 Subcommands:
 
-  save    . Save a webpage to be sent to my Kindle.
-  send    . Send the current weekly bundle to my Kindle.
+  edit-state    . Manually edit the state file.
+  list          . List webpages that would be sent.
+  save          . Save a webpage to be sent to my Kindle.
+  send          . Send the current weekly bundle to my Kindle.
+
+
+------------
+
+Usage: clipper weekly edit-state ...
+
+  Manually edit the state file.
+
+
+------------
+
+Usage: clipper weekly list ...
+
+  List webpages that would be sent.
 
 
 ------------
@@ -73,5 +114,9 @@ Arguments:
 Usage: clipper weekly send ...
 
   Send the current weekly bundle to my Kindle.
+
+Arguments:
+
+ [-do-not-clear]    . do not clear entries after sending (so subsequent sends will send the same URLs)
 """,
         )

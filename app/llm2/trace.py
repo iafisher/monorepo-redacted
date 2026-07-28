@@ -1,6 +1,6 @@
 import pickle
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command, kgenv, llm, pgdb
 
 

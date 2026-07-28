@@ -8,8 +8,8 @@ import time
 import urllib.parse
 from typing import Awaitable
 
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import *
+from iafisher.prelude import *
+from iafisher.scripting import *
 from lib import command, humanunits
 
 

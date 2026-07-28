@@ -5,8 +5,8 @@ import zulip
 from app.bookmarks.common import insert_bookmarks_filtering_duplicates
 from app.bookmarks.models import Bookmark
 from app.bookmarks.state import State
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import command, kgenv, kghttp, secrets
 from lib.pgdb import pgdb
 

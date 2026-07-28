@@ -1,6 +1,6 @@
 import tempfile
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib.testing import *
 
 from .linereader import LineReader

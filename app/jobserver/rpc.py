@@ -3,7 +3,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from lib import kgjson, oshelper
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 from . import server_state
 

@@ -13,8 +13,8 @@ from app.iafisher.provision_deploy import (
     main_provision,
     main_rollback,
 )
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import sh0
+from iafisher.prelude import *
+from iafisher.scripting import sh0
 from lib import command, kghttp, obsidian
 
 

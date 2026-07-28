@@ -3,7 +3,7 @@ from collections import defaultdict
 from app.habits import models
 from app.habits.common import create_habit_entry, fetch_habit_entries, fetch_habits
 from lib import dblog, pgdb, webserver
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 from flask import jsonify, render_template_string, request
 

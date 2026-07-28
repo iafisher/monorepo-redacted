@@ -8,8 +8,8 @@ from app.iafisher.common import (
     HTTP_API_KEY_HEADER,
     ensure_api_key,
 )
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import command, kghttp, obsidian, uuid7
 
 

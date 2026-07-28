@@ -1,4 +1,4 @@
-from iafisher_foundation.command import (
+from iafisher.command import (
     Command,
     Extra,
     Group,

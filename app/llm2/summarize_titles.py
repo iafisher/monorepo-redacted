@@ -1,4 +1,4 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import llm, pgdb
 
 
@@ -7,7 +7,7 @@ def summarize_title(first_message: str) -> str:
         response = llm.oneshot(
             db,
             f"Summarize this message in 5-7 words as a title:\n\n{first_message}",
-            model=llm.CLAUDE_HAIKU_4_5,
+            model=llm.ClaudeModel.HAIKU_LATEST,
             system_prompt="You are a helpful assistant that creates concise, descriptive titles."
             " The title should be in sentence case and begin with a capital letter."
             " Return only the title, without quotes or punctuation at the end.",

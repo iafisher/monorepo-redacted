@@ -4,7 +4,7 @@ import time
 import urllib.parse
 
 from app.wikipedia.common import USER_AGENT
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import iterhelper, kghttp
 
 

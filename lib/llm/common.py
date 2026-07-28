@@ -3,7 +3,7 @@ import pickle
 import time
 from typing import Iterator
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 from . import universal
 

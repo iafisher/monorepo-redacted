@@ -8,8 +8,8 @@ from app.bookmarks import (
 )
 from app.bookmarks.common import insert_bookmarks_filtering_duplicates
 from app.bookmarks.models import Bookmark
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *  # noqa: F401
+from iafisher import timehelper
+from iafisher.prelude import *  # noqa: F401
 from lib import command, pgdb
 
 

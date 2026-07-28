@@ -1,4 +1,4 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib.testing import *
 
 from .dblog import _get_app_or_lib

@@ -1,4 +1,4 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command, kgenv, kgjson
 
 
@@ -120,7 +120,7 @@ class RpcSchema(kgjson.Base):
         builder: List[str] = []
         builder.append(
             f"# {_do_not_edit} (source: {source_path})\n\n"
-            "from iafisher_foundation.prelude import *  # noqa: F401\n"
+            "from iafisher.prelude import *  # noqa: F401\n"
             "from lib import kgjson\n\n\n"
         )
         for type_ in self.types:

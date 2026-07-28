@@ -1,6 +1,6 @@
 import contextlib
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command, obsidian, oshelper
 
 

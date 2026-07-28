@@ -8,8 +8,8 @@ from typing import Any, Callable
 from typing_extensions import override
 from unittest.mock import patch
 
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import sh0
+from iafisher.prelude import *
+from iafisher.scripting import sh0
 
 import expecttest
 import psycopg
@@ -22,6 +22,7 @@ class Base(expecttest.TestCase):
     @override
     def setUpClass(cls):
         os.environ["KG_MODE"] = "test"
+        cls.maxDiff = None
 
     def assertStdout(self, expected: str, actual_callable: Callable[[], Any]) -> None:
         stdout = self.capture_stdout(actual_callable)

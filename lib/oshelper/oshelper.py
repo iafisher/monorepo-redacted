@@ -2,7 +2,7 @@ import fcntl
 import uuid
 from typing import IO, Self
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 def replace_file(p: PathLike, contents: Union[str, bytes]) -> None:

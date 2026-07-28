@@ -7,8 +7,8 @@ import unittest
 import warnings
 from pathlib import Path
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import kgenv, localdb
 from lib.testing import *
 

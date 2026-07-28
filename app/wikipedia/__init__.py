@@ -1,1 +1,1 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *

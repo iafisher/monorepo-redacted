@@ -4,8 +4,8 @@ from typing import Literal, Self
 from anthropic import types as anthropic_types
 from openai.types import responses as openai_types
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import pgdb
 
 from . import storage, universal

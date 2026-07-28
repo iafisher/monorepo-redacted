@@ -1,7 +1,7 @@
 import urllib.parse
 from typing import Literal
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import kghttp, kgjson, secrets
 
 # https://core.telegram.org/bots/api

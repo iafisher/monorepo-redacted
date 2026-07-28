@@ -8,8 +8,8 @@ import uuid
 
 from app.llm2 import common
 from app.llm2.code import Hooks as VerboseHooks
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import q, sh0
+from iafisher.prelude import *
+from iafisher.scripting import q, sh0
 from lib import command, kgjson, githelper, kgenv, llm, pgdb, simplemail
 
 
@@ -52,9 +52,7 @@ def main_accept(
         bool, command.Extra(help="apply the patch even if `git status` is unclean")
     ],
 ) -> None:
-    machine = kgenv.get_machine()
-    if machine != kgenv.MACHINE_LAPTOP:
-        raise KgError("This command can only be run from my laptop.", machine=machine)
+    kgenv.assert_on_laptop()
 
     if code_dir is None:
         code_dir = kgenv.get_code_dir()
@@ -135,7 +133,7 @@ def get_request_dir() -> pathlib.Path:
 def main_prompt(
     *,
     prompt: str,
-    model: str = llm.CLAUDE_SONNET_4_6,
+    model: str = llm.ClaudeModel.SONNET_LATEST.value,
     verbose: bool = False,
     preserve_temp_dir: bool = False,
 ) -> None:

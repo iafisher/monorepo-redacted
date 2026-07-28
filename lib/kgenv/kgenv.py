@@ -1,6 +1,6 @@
 from typing import Literal
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 MACHINE_HOMESERVER = "homeserver2"
@@ -60,7 +60,10 @@ def get_app_dir(appname: str) -> pathlib.Path:
 
 def get_code_dir_opt() -> Optional[pathlib.Path]:
     p = os.environ.get(ENV_CODE_DIR)
-    return opt_call(p, pathlib.Path)
+    if p is None or p == "":
+        return None
+    else:
+        return pathlib.Path(p)
 
 
 _kg_machine_envvar = "KG_MACHINE"
@@ -77,6 +80,11 @@ def get_machine() -> str:
 
 def get_machine_opt() -> Optional[str]:
     return os.environ.get(_kg_machine_envvar)
+
+
+def assert_on_laptop() -> None:
+    if get_machine() != MACHINE_LAPTOP:
+        raise KgError("This command must be run on my laptop.")
 
 
 def get_env() -> Dict[str, str]:

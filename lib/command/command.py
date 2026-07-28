@@ -1,9 +1,9 @@
-from iafisher_foundation.command import (
+from iafisher.command import (
     Command,
     Group,
     dispatch as _dispatch,
 )
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import kglogging
 
 

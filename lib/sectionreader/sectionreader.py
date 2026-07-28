@@ -1,6 +1,6 @@
 from typing import Iterable, TypeVar
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 def look_for_end_text(

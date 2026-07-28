@@ -3,7 +3,7 @@ import sys
 import typing
 
 from app.iafisher.common import DO_NOT_PUBLISH_PROPERTY
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command, githelper, obsidian
 
 

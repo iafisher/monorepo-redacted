@@ -1,9 +1,9 @@
 import shlex
 
 from app.iafisher.common import CODE_PATH
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import sh0
+from iafisher import timehelper
+from iafisher.prelude import *
+from iafisher.scripting import sh0
 from lib import githelper, kgenv
 
 

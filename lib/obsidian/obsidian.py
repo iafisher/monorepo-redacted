@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 import yaml
 
 from lib import githelper, oshelper
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 from .snapshot import snapshot
 

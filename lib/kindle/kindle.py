@@ -1,6 +1,6 @@
 import subprocess
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import simplemail
 
 from .redacted import KINDLE_EMAIL_ADDRESS

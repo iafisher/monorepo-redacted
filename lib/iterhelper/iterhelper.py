@@ -1,7 +1,7 @@
 import random
 from typing import TypeVar
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 T1 = TypeVar("T1")

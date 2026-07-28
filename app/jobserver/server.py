@@ -3,8 +3,8 @@ import struct
 import time
 import traceback
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import dblog, emailalerts, kgenv, localdb, oshelper
 
 from . import email_templates, models, rpc
@@ -434,15 +434,21 @@ def prepare_env(job: Job) -> Dict[str, str]:
             str(kgenv.get_ian_dir() / "repos" / "current" / "bin"),
         ]
     )
+
     env = {
-        "KG_CODE_DIR": os.environ.get("KG_CODE_DIR", ""),
         "KG_LOG_LEVEL": "info",
-        "KG_MACHINE": os.environ.get("KG_MACHINE", ""),
         "HOME": os.environ["HOME"],
         "PATH": os.environ["PATH"] + ":" + extra_path,
-        "PGHOST": os.environ.get("PGHOST", ""),
         "PYTHONPATH": pythonpath,
     }
+
+    def _copy_opt(key: str) -> None:
+        if (val := os.environ.get(key)) is not None:
+            env[key] = val
+
+    _copy_opt("KG_CODE_DIR")
+    _copy_opt("KG_MACHINE")
+    _copy_opt("PGHOST")
 
     return env
 

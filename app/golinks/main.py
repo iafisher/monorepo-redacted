@@ -3,8 +3,8 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from app.golinks.models import Golink
-from iafisher_foundation import tabular, timehelper
-from iafisher_foundation.prelude import *  # noqa: F401
+from iafisher import tabular, timehelper
+from iafisher.prelude import *  # noqa: F401
 from lib import command, pgdb
 
 

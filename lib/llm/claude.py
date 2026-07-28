@@ -6,8 +6,9 @@ from typing import Iterator, Literal, Self
 import anthropic
 import pydantic_core
 from anthropic import types as anthropic_types
+from anthropic._types import omit as anthropic_omit
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import secrets
 from . import universal
 from .base import (
@@ -23,19 +24,17 @@ from .base import (
 )
 from .common import IteratorWithDelay, TokenUsage, load_mock_turn
 from .model_names import (
-    CLAUDE_MOCK_LOCAL_TOOL_USE,
-    CLAUDE_MOCK_WEB_SEARCH,
-    CLAUDE_OPUS_4_6,
+    ClaudeModel,
     MODEL_FAMILY_CLAUDE,
 )
 
 
-MOCK_MODELS = (CLAUDE_MOCK_LOCAL_TOOL_USE, CLAUDE_MOCK_WEB_SEARCH)
+MOCK_MODELS = (ClaudeModel.MOCK_LOCAL_TOOL_USE, ClaudeModel.MOCK_WEB_SEARCH)
 
 
 class Claude(APIWrapper):
     def __init__(self, model: str) -> None:
-        self.model = model
+        self.model = ClaudeModel(model)
         api_key = secrets.get_or_raise("ANTHROPIC_API_KEY")
         self.client = anthropic.Anthropic(api_key=api_key)
 
@@ -52,82 +51,8 @@ class Claude(APIWrapper):
     ) -> ModelResponse:
         max_tokens = options.max_tokens
         temperature = options.temperature
-        reasoning = options.reasoning
 
-        if (
-            reasoning is not None
-            and reasoning.effort == "dynamic"
-            and self.model == CLAUDE_OPUS_4_6
-        ):
-            thinking = anthropic_types.ThinkingConfigAdaptiveParam(type="adaptive")
-        elif reasoning is not None:
-            if temperature != 1.0:
-                if options.strict:
-                    raise ModelMisconfigurationError(
-                        "Claude does not support custom temperature when reasoning is enabled.",
-                        model=self.model,
-                        options=options,
-                    )
-                else:
-                    temperature = 1.0
-                    LOG.debug(
-                        "Claude does not support custom temperature when reasoning is enabled, falling back to %s.",
-                        temperature,
-                    )
-
-            if reasoning.effort == "dynamic":
-                if options.strict:
-                    raise ModelMisconfigurationError(
-                        "Claude does not support dynamic reasoning.",
-                        model=self.model,
-                        options=options,
-                    )
-                effort = "medium"
-                LOG.debug(
-                    "Claude does not support dynamic reasoning, falling back to %r.",
-                    effort,
-                )
-            else:
-                effort = reasoning.effort
-
-            if reasoning.summary is False:
-                if options.strict:
-                    raise ModelMisconfigurationError(
-                        "`reasoning.summary` is False, but Claude does not support turning off reasoning summaries",
-                        model=self.model,
-                        options=options,
-                    )
-
-            # https://github.com/BerriAI/litellm/blob/v1.79.3-stable/litellm/constants.py#L75
-            if effort == "low":
-                # NOTE: This is the minimum possible value of `budget_tokens`.
-                budget_tokens = 1024
-            elif effort == "medium":
-                budget_tokens = 2048
-            else:
-                budget_tokens = 4096
-
-            if max_tokens <= budget_tokens:
-                if options.strict:
-                    raise ModelMisconfigurationError(
-                        "reasoning was enabled for Claude but the max tokens is too low for the reasoning effort",
-                        max_tokens=max_tokens,
-                        inferred_budget_tokens=budget_tokens,
-                        reasoning=reasoning,
-                    )
-                else:
-                    max_tokens = budget_tokens
-                    LOG.debug(
-                        "max_tokens for Claude was too low for desired reasoning effort (%r), bumped to %d.",
-                        effort,
-                        max_tokens,
-                    )
-
-            thinking = anthropic_types.ThinkingConfigEnabledParam(
-                type="enabled", budget_tokens=budget_tokens
-            )
-        else:
-            thinking = anthropic_types.ThinkingConfigDisabledParam(type="disabled")
+        thinking, output_config = _create_thinking_param(options, self.model)
 
         if options.caching:
             messages = messages[:]
@@ -143,6 +68,7 @@ class Claude(APIWrapper):
                 temperature=temperature,
                 max_tokens=max_tokens,
                 thinking=thinking,
+                output_config=output_config,
                 system=system_prompt,
                 tools=tools_claude,
                 messages=messages,
@@ -157,6 +83,7 @@ class Claude(APIWrapper):
                     temperature=temperature,
                     max_tokens=max_tokens,
                     thinking=thinking,
+                    output_config=opt_or(output_config, anthropic_omit),
                     system=system_prompt,
                     tools=tools_claude,
                     messages=messages,  # type: ignore
@@ -355,6 +282,123 @@ class Claude(APIWrapper):
     @override
     def model_family(self) -> str:
         return MODEL_FAMILY_CLAUDE
+
+
+def _create_thinking_param(
+    options: InferenceOptions, model: ClaudeModel
+) -> Tuple[Any, Any]:
+    # https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking#supported-models
+    # https://platform.claude.com/docs/en/build-with-claude/extended-thinking
+    match model:
+        case ClaudeModel.HAIKU_4_5 | ClaudeModel.OPUS_4_5 | ClaudeModel.SONNET_4_5:
+            return _create_thinking_param_legacy(options, model), None
+        case (
+            ClaudeModel.FABLE_5
+            | ClaudeModel.OPUS_4_6
+            | ClaudeModel.OPUS_4_8
+            | ClaudeModel.SONNET_4_6
+            | ClaudeModel.SONNET_5
+        ):
+            return _create_thinking_param_adaptive(options)
+        case ClaudeModel.MOCK_LOCAL_TOOL_USE | ClaudeModel.MOCK_WEB_SEARCH:
+            return None, None
+        case _:
+            impossible()
+
+
+def _create_thinking_param_adaptive(options: InferenceOptions) -> Any:
+    if options.reasoning is None:
+        return anthropic_types.ThinkingConfigDisabledParam(type="disabled")
+    else:
+        match options.reasoning.effort:
+            case "dynamic":
+                output_config = None
+            case "high":
+                output_config = anthropic_types.OutputConfigParam(effort="high")
+            case "medium":
+                output_config = anthropic_types.OutputConfigParam(effort="medium")
+            case "low":
+                output_config = anthropic_types.OutputConfigParam(effort="low")
+
+        return (
+            anthropic_types.ThinkingConfigAdaptiveParam(type="adaptive"),
+            output_config,
+        )
+
+
+def _create_thinking_param_legacy(options: InferenceOptions, model: str) -> Any:
+    reasoning = options.reasoning
+    temperature = options.temperature
+    max_tokens = options.max_tokens
+
+    if reasoning is not None:
+        if temperature != 1.0:
+            if options.strict:
+                raise ModelMisconfigurationError(
+                    "Claude does not support custom temperature when reasoning is enabled.",
+                    model=model,
+                    options=options,
+                )
+            else:
+                temperature = 1.0
+                LOG.debug(
+                    "Claude does not support custom temperature when reasoning is enabled, falling back to %s.",
+                    temperature,
+                )
+
+        if reasoning.effort == "dynamic":
+            if options.strict:
+                raise ModelMisconfigurationError(
+                    "Claude does not support dynamic reasoning.",
+                    model=model,
+                    options=options,
+                )
+            effort = "medium"
+            LOG.debug(
+                "Claude does not support dynamic reasoning, falling back to %r.",
+                effort,
+            )
+        else:
+            effort = reasoning.effort
+
+        if reasoning.summary is False:
+            if options.strict:
+                raise ModelMisconfigurationError(
+                    "`reasoning.summary` is False, but Claude does not support turning off reasoning summaries",
+                    model=model,
+                    options=options,
+                )
+
+        # https://github.com/BerriAI/litellm/blob/v1.79.3-stable/litellm/constants.py#L75
+        if effort == "low":
+            # NOTE: This is the minimum possible value of `budget_tokens`.
+            budget_tokens = 1024
+        elif effort == "medium":
+            budget_tokens = 2048
+        else:
+            budget_tokens = 4096
+
+        if max_tokens <= budget_tokens:
+            if options.strict:
+                raise ModelMisconfigurationError(
+                    "reasoning was enabled for Claude but the max tokens is too low for the reasoning effort",
+                    max_tokens=max_tokens,
+                    inferred_budget_tokens=budget_tokens,
+                    reasoning=reasoning,
+                )
+            else:
+                max_tokens = budget_tokens
+                LOG.debug(
+                    "max_tokens for Claude was too low for desired reasoning effort (%r), bumped to %d.",
+                    effort,
+                    max_tokens,
+                )
+
+        return anthropic_types.ThinkingConfigEnabledParam(
+            type="enabled", budget_tokens=budget_tokens
+        )
+    else:
+        return anthropic_types.ThinkingConfigDisabledParam(type="disabled")
 
 
 class MockStream:

@@ -1,7 +1,7 @@
 import openai
 
-from iafisher_foundation import tabular, timehelper
-from iafisher_foundation.prelude import *
+from iafisher import tabular, timehelper
+from iafisher.prelude import *
 from lib import command, obsidian, pgdb, secrets
 
 

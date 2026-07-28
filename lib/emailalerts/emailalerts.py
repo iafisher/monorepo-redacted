@@ -18,8 +18,8 @@ import math
 import time
 import warnings
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import kgenv, kgjson, simplemail
 
 

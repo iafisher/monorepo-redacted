@@ -5,8 +5,8 @@ from typing import Literal, Self
 
 from expecttest import TestCase
 
-from iafisher_foundation.timehelper import TZ_NYC
-from iafisher_foundation.prelude import *
+from iafisher.timehelper import TZ_NYC
+from iafisher.prelude import *
 from lib.testing import *
 
 from . import kgjson

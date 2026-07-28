@@ -7,10 +7,18 @@ expecttest
 flask == 3.1.1
 google-api-python-client == 2.176.0
 google-genai == 1.52.0
-iafisher-foundation == 0.1.10
+iafisher == 0.1.10
 litellm
 Markdown == 3.3
 openai == 2.44.0
+
+# requires Poppler development headers
+# on Rocky Linux:
+#   $ sudo dnf config-manager --set-enabled crb
+#   $ sudo dnf install poppler-cpp-devel
+#
+pdftotext
+
 prompt_toolkit
 psycopg[binary] == 3.2.9
 pydantic-core

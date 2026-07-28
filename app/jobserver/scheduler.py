@@ -28,8 +28,8 @@ Given this, a generic implementation of `get_next_scheduled_time` is simply:
 from abc import ABC, abstractmethod
 from typing import Self
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import humanunits, kgjson
 
 

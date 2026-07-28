@@ -3,7 +3,7 @@ import urllib.parse
 import flask
 
 from app.wikipedia import rpc, tidy
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import llm, webserver
 
 
@@ -51,7 +51,7 @@ def api_tidy_llm():
     if request.text.strip() == "":
         return webserver.json_response_error("text was blank")
 
-    model_name = request.model or llm.CLAUDE_SONNET_4_6
+    model_name = request.model or llm.ClaudeModel.SONNET_LATEST
     try:
         LOG.info("LLM call started")
         edited_text, response = tidy.tidy(request.text, model=model_name)

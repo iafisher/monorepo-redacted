@@ -3,7 +3,7 @@ import json
 from app.jobserver.scheduler import Schedule
 
 from lib import kgenv, kgjson, oshelper
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 
 @dataclass

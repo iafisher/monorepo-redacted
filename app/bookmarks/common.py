@@ -1,6 +1,6 @@
 from app.bookmarks.models import Bookmark
 from lib import pgdb
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 
 T = Bookmark.T
 

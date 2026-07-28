@@ -4,8 +4,8 @@ import types
 import typing
 from typing import Generic, ItemsView, NewType, Self, TypeVar, cast
 
-from iafisher_foundation import timehelper
-from iafisher_foundation.prelude import *
+from iafisher import timehelper
+from iafisher.prelude import *
 from lib import humanunits, oshelper
 
 

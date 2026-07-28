@@ -4,7 +4,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command, dblog, kgenv, secrets
 
 from .redacted import *

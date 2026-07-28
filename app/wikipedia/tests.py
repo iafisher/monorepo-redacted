@@ -1,4 +1,4 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command
 from lib.testing import *
 
@@ -90,7 +90,7 @@ Arguments:
 
  [-article ARG]      . copy-edit this article
  [-category ARG]     . fetch a random article in this category
- [-model ARG]        . (default: 'gpt-5.2')
+ [-model ARG]        . (default: 'gpt-5.5')
  [-vital-level-3]    . fetch a random level 3 vital article
 
 

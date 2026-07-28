@@ -2,8 +2,8 @@ import json
 from typing import Literal
 
 from app.llm2 import chatloop, common
-from iafisher_foundation import colors, timehelper
-from iafisher_foundation.prelude import *
+from iafisher import colors, timehelper
+from iafisher.prelude import *
 from lib import command, githelper, llm
 
 
@@ -88,7 +88,7 @@ def main(
     root_directory: Annotated[
         Optional[pathlib.Path], command.Extra(name="-directory")
     ] = None,
-    model: str = llm.CLAUDE_SONNET_4_6,
+    model: str = llm.ClaudeModel.SONNET_LATEST.value,
     auto_approve: bool = False,
     bash: bool = False,
     resume_conversation_id: Annotated[

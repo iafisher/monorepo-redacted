@@ -1,4 +1,4 @@
-from iafisher_foundation.prelude import *
+from iafisher.prelude import *
 from lib import command
 from lib.testing import *
 
@@ -23,6 +23,7 @@ Subcommands:
   oneshot             . Respond to a prompt and exit.
   proofread
   summarize-titles
+  test
   trace               . Trace raw API responses.
 
 
@@ -277,6 +278,24 @@ Usage: llm2 summarize-titles ...
 Arguments:
 
  [-limit ARG]    . (default: None)
+
+
+------------
+
+Usage: llm2 test SUBCMD
+
+Subcommands:
+
+  model
+
+
+------------
+
+Usage: llm2 test model ...
+
+Arguments:
+
+  model
 
 
 ------------

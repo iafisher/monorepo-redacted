@@ -7,10 +7,10 @@ import sys
 import time
 
 from app.jobserver.cli import cmd as jobserver_cmd
+from iafisher import colors
+from iafisher.prelude import *
+from iafisher.scripting import sh0
 from lib import command, fzf, humanunits, kgenv, simplemail
-from iafisher_foundation import colors
-from iafisher_foundation.prelude import *
-from iafisher_foundation.scripting import sh0
 
 
 def main_check_heartbeat(
@@ -84,10 +84,7 @@ def main_logs(app: Optional[str], *, follow: bool = False) -> None:
 
 
 def main_remote(args: Annotated[List[str], command.Extra(passthrough=True)]) -> None:
-    machine = kgenv.get_machine()
-    if machine != kgenv.MACHINE_LAPTOP:
-        raise KgError("`kg r` can only be run from laptop", machine=machine)
-
+    kgenv.assert_on_laptop()
     sh0(shlex.join(["ssh", "homeserver2"] + args))
 
 
@@ -113,7 +110,7 @@ def main_shell() -> None:
 
             local[key] = getattr(module, key)
 
-    foundation_module_name = "iafisher_foundation"
+    foundation_module_name = "iafisher"
     _import_star(foundation_module_name)
     prelude_module_name = f"{foundation_module_name}.prelude"
     _import_star(prelude_module_name)
