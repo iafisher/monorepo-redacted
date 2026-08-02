@@ -60,7 +60,7 @@ def _pandoc(
         options.append(f"author={author}")
 
     subprocess.run(
-        ["pandoc"] + args + ["-o", output_file] + options,
+        ["/opt/homebrew/bin/pandoc"] + args + ["-o", output_file] + options,
         input=stdin,
         check=True,
     )

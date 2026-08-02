@@ -23,7 +23,9 @@ def main_upload() -> None:
         os.chdir(path)
         sh0(f"{exe} build")
         LOG.info("uploading book: %s", entry.name)
-        sh0(f"rsync -r book/ iafisher.com:/var/www/iafisher/microbooks/{entry.name}")
+        sh0(
+            f"rsync -r --delete book/ iafisher.com:/var/www/iafisher/microbooks/{entry.name}/"
+        )
 
 
 cmd = command.Group(help="Helper commands for books.")

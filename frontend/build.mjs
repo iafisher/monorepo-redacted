@@ -19,6 +19,7 @@ async function main(mode, outdir) {
       "bookmarks/bookmarks": "./frontend/bookmarks/main.ts",
       "habits/habits": "./frontend/habits/main.ts",
       "jobs/jobs": "./frontend/jobs/main.ts",
+      "kiosk/kiosk": "./frontend/kiosk/main.ts",
       "llmweb/llmweb": "./frontend/llmweb/main.ts",
       "wikitidy/extension": "./frontend/wikitidy/ui.ts",
       "wikitidy/codemirror": "./frontend/wikitidy/codemirror.ts",

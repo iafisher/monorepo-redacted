@@ -1,0 +1,93 @@
+:root {
+    font-size: 20px;
+}
+
+.page-index {
+    .row {
+        max-width: 650px;
+        margin: 0 auto;
+
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+
+        font-size: 1.2rem;
+    }
+
+    .subway {
+        flex: 1;
+        border: 1px solid black;
+
+        .next-times {
+            text-align: center;
+            font-size: 1.1em;
+            margin-top: 5px;
+            margin-bottom: 10px;
+
+            .when {
+                font-weight: bold;
+            }
+        }
+
+        table {
+            width: 100%;
+            padding: 10px;
+
+            td.service {
+                font-weight: bold;
+            }
+
+            td.time, td.arrival {
+                padding-left: 30px;
+                text-align: right;
+            }
+
+            td.time {
+                &.too-late {
+                    color: red;
+                }
+
+                &.hurry {
+                    font-weight: bold;
+                    color: orange;
+                }
+            }
+        }
+    }
+
+    .bikes {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .station {
+            display: flex;
+            padding: 10px 12px;
+            border: 1px solid black;
+
+            .name {
+                font-weight: bold;
+            }
+
+            .status {
+                margin-left: auto;
+            }
+        }
+    }
+
+    .error {
+        flex: 1;
+        border: 1px solid black;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .when-loaded {
+        text-align: center;
+        font-style: italic;
+    }
+}

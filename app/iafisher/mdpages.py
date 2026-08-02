@@ -87,10 +87,6 @@ def main_upload(
         relpath = image_file.relative_to(dirpath)
         print(f"{relpath}: done")
 
-    redirects_file = dirpath / "REDIRECTS.md"
-    if redirects_file.exists():
-        upload_redirects(redirects_file, api_key=api_key, base_url=base_url)
-
 
 def get_mdpages_hashes(api_key: str, base_url: str) -> Dict[str, str]:
     url = f"{base_url}/mdpages/api/hashes"
@@ -149,6 +145,11 @@ def maybe_upload_page_to_site(
             document.fulltext, page_id_property, str(page_id)
         )
         path.write_text(updated_text)
+
+        # We have altered the document so we should re-parse.
+        document = obsidian.Document.from_text(updated_text)
+        markdown_text = document.fulltext_without_properties()
+        properties = document.properties()
 
     # IMPORTANT: Do the hash comparison on `fulltext_without_properties`, not `fulltext`
     # since the server doesn't have the full text.
@@ -241,29 +242,6 @@ def delete_page_from_site(api_key: str, base_url: str, paths: List[str]) -> None
     )
     for path in paths:
         print(f"{path}: deleted")
-
-
-def upload_redirects(
-    redirects_file: pathlib.Path, *, api_key: str, base_url: str
-) -> None:
-    redirects: List[Dict[str, str]] = []
-    with open(redirects_file) as f:
-        for line in f:
-            if "-->" in line:
-                path, target = line.split("-->")
-                redirects.append(
-                    dict(
-                        path=path.strip().lstrip("/"),
-                        target="/" + target.strip().lstrip("/"),
-                    )
-                )
-
-    url = f"{base_url}/mdpages/api/upload-redirects"
-    response = kghttp.post(
-        url, json=dict(redirects=redirects), headers={HTTP_API_KEY_HEADER: api_key}
-    )
-    assert response.status_code == 200
-    print("redirects: uploaded")
 
 
 def make_mdpages_path(path: pathlib.Path, *, root: pathlib.Path) -> str:

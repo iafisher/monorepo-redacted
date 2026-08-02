@@ -139,6 +139,7 @@ TEMPLATE = """\
 </head>
 
 <body>
+{{ (content_html or '') | safe }}
 </body>
 
 <script src="{{ url_for('static', filename='%(static_file_name)s.js') }}"></script>

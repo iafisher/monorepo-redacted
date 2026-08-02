@@ -420,9 +420,9 @@ def api_prompt():
                 q.put(ChunkSummaryStarted())
                 summary_response = llm.oneshot(
                     db,
-                    response.output_text,
+                    f"<query>\n{user_prompt}\n</query>\n\n<response>\n{response.output_text}\n</response>\n",
                     model=llm.GptModel.GPT_NANO_LATEST,
-                    system_prompt="Summarize the message in 1-3 sentences.",
+                    system_prompt=SUMMARY_PROMPT,
                     app_name="llmweb",
                     options=llm.InferenceOptions.fast(),
                 )
@@ -508,6 +508,19 @@ def api_prompt():
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         },
     )
+
+
+SUMMARY_PROMPT = """\
+Summarize the <response>...</response> block in 1-3 sentences.
+
+Write the summary so that it can be substituted for the original message, e.g., don't
+begin it with "The message says...".
+
+Include the key points and questions but omit unnecessary details.
+
+You are given the query that prompted the response in a <query>...</query> block for
+context. Do not summarize the query, just the response.
+"""
 
 
 def get_citations(
