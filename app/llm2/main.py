@@ -152,9 +152,30 @@ Be concise.
 """
 
 
-def main_oneshot(words: List[str], *, model: str = llm.ANY_FAST_MODEL) -> None:
+def main_oneshot(
+    words: List[str],
+    *,
+    model: str = llm.ANY_FAST_MODEL,
+    file: Annotated[
+        Optional[pathlib.Path],
+        command.Extra(help="include the text of the file as additional context"),
+    ],
+    inference: str = "fast",
+) -> None:
     prompt = " ".join(words)
-    options = llm.InferenceOptions.fast()
+    if file is not None:
+        prompt = f'<file path="{file}">{file.read_text()}</file>\n\n' + prompt
+
+    match inference:
+        case "fast":
+            options = llm.InferenceOptions.fast()
+        case "normal":
+            options = llm.InferenceOptions.normal()
+        case "slow":
+            options = llm.InferenceOptions.slow()
+        case x:
+            raise KgError("unknown value for -inference flag", value=x)
+
     with pgdb.connect() as db:
         llm.oneshot(
             db,

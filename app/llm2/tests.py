@@ -258,7 +258,9 @@ Usage: llm2 oneshot ...
 Arguments:
 
   words
-  [-model ARG]    . (default: 'any_fast')
+  [-file ARG]         . include the text of the file as additional context
+  [-inference ARG]    . (default: 'fast')
+  [-model ARG]        . (default: 'any_fast')
 
 
 ------------
