@@ -25,6 +25,7 @@ interface ChatState {
   inputText: string;
   selectedModel: string;
   inferenceMode: string;
+  webSearchEnabled: boolean;
   tokenCount: number | null;
 }
 
@@ -122,40 +123,48 @@ async function sendMessage(state: ChatState) {
     //   - message_created for assistant message
     //   - token_count chunk
     //
-    await api.prompt(conversationId, message, state.inferenceMode, (event) => {
-      if (event.chunkType === "message_created") {
-        if (event.message.role === "user") {
-          // Don't erase the input box until the text has been stored in the database.
-          state.inputText = "";
-          state.messages.push(event.message);
-        } else if (event.message.role === "websearch") {
-          state.loadingStatus = "Searching the web.";
-        } else if (
-          event.message.role === "assistant" ||
-          event.message.role === "citations"
-        ) {
-          state.loadingStatus = null;
-          state.messages.push(event.message);
+    await api.prompt(
+      conversationId,
+      message,
+      state.inferenceMode,
+      state.webSearchEnabled,
+      (event) => {
+        if (event.chunkType === "message_created") {
+          if (event.message.role === "user") {
+            // Don't erase the input box until the text has been stored in the database.
+            state.inputText = "";
+            state.messages.push(event.message);
+          } else if (event.message.role === "websearch") {
+            state.loadingStatus = "Searching the web.";
+          } else if (
+            event.message.role === "assistant" ||
+            event.message.role === "citations"
+          ) {
+            state.loadingStatus = null;
+            state.messages.push(event.message);
+          } else if (event.message.role === "error") {
+            onError(event.message.content);
+          }
+        } else if (event.chunkType === "error") {
+          onError(event.error);
+        } else if (event.chunkType === "assistant_response_started") {
+          state.loadingStatus = "Query received.";
+        } else if (event.chunkType === "text") {
+          textWords += countWordsInaccurately(event.payload);
+          state.loadingStatus = `Response generating: ${pluralize(textWords, "word")}.`;
+        } else if (event.chunkType === "thinking") {
+          thinkingWords += countWordsInaccurately(event.payload);
+          state.loadingStatus = `Model thinking: ${pluralize(thinkingWords, "word")}.`;
+        } else if (event.chunkType === "token_count") {
+          state.tokenCount = event.count;
+        } else if (event.chunkType === "summary_started") {
+          state.loadingStatus = `Summarizing: ${pluralize(textWords, "word")}.`;
         }
-      } else if (event.chunkType === "error") {
-        onError(event.error);
-      } else if (event.chunkType === "assistant_response_started") {
-        state.loadingStatus = "Query received.";
-      } else if (event.chunkType === "text") {
-        textWords += countWordsInaccurately(event.payload);
-        state.loadingStatus = `Response generating: ${pluralize(textWords, "word")}.`;
-      } else if (event.chunkType === "thinking") {
-        thinkingWords += countWordsInaccurately(event.payload);
-        state.loadingStatus = `Model thinking: ${pluralize(thinkingWords, "word")}.`;
-      } else if (event.chunkType === "token_count") {
-        state.tokenCount = event.count;
-      } else if (event.chunkType === "summary_started") {
-        state.loadingStatus = `Summarizing: ${pluralize(textWords, "word")}.`;
-      }
 
-      m.redraw();
-      scrollToBottom();
-    });
+        m.redraw();
+        scrollToBottom();
+      },
+    );
   } catch (error: any) {
     onError("Failed to send message: " + error.message);
     m.redraw();
@@ -356,6 +365,16 @@ class ModelSelectorView {
           ),
         ),
       ]),
+      m("label.checkbox-container", [
+        m("input", {
+          type: "checkbox",
+          checked: state.webSearchEnabled,
+          onchange: (e: InputEvent) => {
+            state.webSearchEnabled = (e.target as HTMLInputElement).checked;
+          },
+        }),
+        "Web search",
+      ]),
     ]);
   }
 }
@@ -454,6 +473,7 @@ class ChatPage {
       loadingStatus: null,
       selectedModel: DEFAULT_MODEL,
       inferenceMode: "normal",
+      webSearchEnabled: false,
       tokenCount: null,
     };
   }

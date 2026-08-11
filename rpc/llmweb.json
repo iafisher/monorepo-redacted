@@ -44,7 +44,8 @@
       "fields": [
         { "name": "conversation_id", "type": "int" },
         { "name": "message", "type": "string" },
-        { "name": "inference_mode", "type": "string?" }
+        { "name": "inference_mode", "type": "string?" },
+        { "name": "web_search_enabled", "type": "boolean?" }
       ]
     },
     {

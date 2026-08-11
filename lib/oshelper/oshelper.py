@@ -1,4 +1,6 @@
 import fcntl
+import os
+import stat
 import uuid
 from typing import IO, Self
 
@@ -6,6 +8,7 @@ from iafisher.prelude import *
 
 
 def replace_file(p: PathLike, contents: Union[str, bytes]) -> None:
+    old_stat = os.stat(p)
     tmppath = _tmppath_for(p)
     if isinstance(contents, str):
         with open(tmppath, "w") as f:
@@ -17,6 +20,8 @@ def replace_file(p: PathLike, contents: Union[str, bytes]) -> None:
             f.write(contents)
             f.flush()
             os.fsync(f.fileno())
+
+    os.chmod(tmppath, stat.S_IMODE(old_stat.st_mode))
 
     os.rename(tmppath, p)
     dir_fd = os.open(tmppath.parent, os.O_DIRECTORY)

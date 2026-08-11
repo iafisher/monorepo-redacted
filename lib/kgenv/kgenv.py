@@ -47,9 +47,9 @@ def get_ian_dir() -> pathlib.Path:
 def get_ian_dir_for_mode(mode: Mode) -> pathlib.Path:
     match mode:
         case "prod":
-            return pathlib.Path.home() / ".ian"
+            return pathlib.Path(os.environ["KG_DIR"])
         case "dev":
-            return pathlib.Path.home() / ".ian" / "dev"
+            return pathlib.Path(os.environ["KG_DIR"]) / "dev"
         case "test":
             return pathlib.Path(os.environ["KG_TEST_DIR"])
 

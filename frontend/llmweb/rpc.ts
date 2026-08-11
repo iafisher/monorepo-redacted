@@ -35,6 +35,7 @@ export interface PromptRequest {
   conversationId: number;
   message: string;
   inferenceMode: string | null;
+  webSearchEnabled: boolean | null;
 }
 
 export interface FetchConversationsResponseItem {

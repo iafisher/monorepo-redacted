@@ -30,10 +30,10 @@ Some basic information about the user:
 
 {BASIC_INFORMATION}
 
-You have a web search tool enabled. You should use it when asked for up-to-date
-or local information (e.g., restaurants in New York City), or when explicitly
-requested. You do not need to use it for questions you can answer from your own
-knowledge.
+You may or may not have a web search tool enabled. If enabled, you should use it
+when asked for up-to-date or local information (e.g., restaurants in New York City),
+or when explicitly requested. Do not use it for questions you can answer from your
+own knowledge.
 
 Maintain a professional, straightforward tone. Avoid humor, editorializing,
 and casual asides. Present information clearly and let the user draw their
@@ -289,14 +289,12 @@ def api_prompt():
         user_message = insert_message(db, conversation_id, "user", user_prompt)
         q.put(ChunkMessageCreated(user_message))
 
-        web_search_enabled = True
         is_summary_mode = False
         match rpc_request.inference_mode:
             case None | "normal":
                 options = llm.InferenceOptions.normal()
             case "fast":
                 options = llm.InferenceOptions.fast()
-                web_search_enabled = False
             case "slow":
                 options = llm.InferenceOptions.slow()
             case "summary":
@@ -401,7 +399,9 @@ def api_prompt():
         try:
             hooks = StreamingHooks(db, conversation_id, q)
             tools: List[llm.BaseTool] = (
-                [llm.tools.WebSearchTool()] if web_search_enabled else []
+                [llm.tools.WebSearchTool()]
+                if opt_or(rpc_request.web_search_enabled, False)
+                else []
             )
             q.put(ChunkAssistantResponseStarted())
             response = conversation.prompt(

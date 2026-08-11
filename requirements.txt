@@ -152,6 +152,8 @@ idna==3.10
     #   yarl
 importlib-metadata==8.7.0
     # via litellm
+iprecommit==0.7.5
+    # via -r requirements.in
 itsdangerous==2.2.0
     # via flask
 jinja2==3.1.6
@@ -213,8 +215,6 @@ packaging==25.0
     #   huggingface-hub
 pathspec==0.12.1
     # via black
-pdftotext==4.0.0
-    # via -r requirements.in
 pillow==12.2.0
     # via weasyprint
 platformdirs==4.3.8

@@ -17,7 +17,7 @@ openai == 2.44.0
 #   $ sudo dnf config-manager --set-enabled crb
 #   $ sudo dnf install poppler-cpp-devel
 #
-pdftotext
+#pdftotext
 
 prompt_toolkit
 psycopg[binary] == 3.2.9
@@ -38,5 +38,6 @@ zulip
 black == 24.10.0
 flake8 == 7.1.1
 flake8-unused-arguments
+iprecommit
 mypy == 1.14.1
 pyright == 1.1.407

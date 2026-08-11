@@ -48,6 +48,7 @@ class PromptRequest(kgjson.Base):
     conversation_id: int
     message: str
     inference_mode: Optional[str]
+    web_search_enabled: Optional[bool]
 
 
 @dataclass

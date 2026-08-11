@@ -306,9 +306,9 @@ def _create_thinking_param(
             impossible()
 
 
-def _create_thinking_param_adaptive(options: InferenceOptions) -> Any:
+def _create_thinking_param_adaptive(options: InferenceOptions) -> Tuple[Any, Any]:
     if options.reasoning is None:
-        return anthropic_types.ThinkingConfigDisabledParam(type="disabled")
+        return anthropic_types.ThinkingConfigDisabledParam(type="disabled"), None
     else:
         match options.reasoning.effort:
             case "dynamic":

@@ -7,7 +7,7 @@ import sys
 import time
 
 from app.jobserver.cli import cmd as jobserver_cmd
-from iafisher import colors
+from iafisher import colors, timehelper
 from iafisher.prelude import *
 from iafisher.scripting import sh0
 from lib import command, fzf, humanunits, kgenv, simplemail
@@ -53,6 +53,18 @@ def main_check_heartbeat(
         sys.exit(1)
     else:
         LOG.info("OK")
+
+
+def main_email_after_reboot() -> None:
+    now = timehelper.now()
+    machine = opt_or(kgenv.get_machine_opt(), "unknown")
+    simplemail.send_email(
+        subject=f"kg: machine {machine} rebooted",
+        body=f"This is an informational email that the machine {machine} has rebooted as of {now}."
+        " No action is required.",
+        recipients=[simplemail.HIGH_PRIORITY_RECIPIENT],
+        html=False,
+    )
 
 
 def main_logs(app: Optional[str], *, follow: bool = False) -> None:
@@ -134,6 +146,12 @@ cmd.add2(
     "check-heartbeat",
     main_check_heartbeat,
     help="Check the heartbeat file.",
+    less_logging=False,
+)
+cmd.add2(
+    "email-after-reboot",
+    main_email_after_reboot,
+    help="Send an email after rebooting.",
     less_logging=False,
 )
 cmd.add("jobs", jobserver_cmd)

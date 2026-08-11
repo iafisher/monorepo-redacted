@@ -16,7 +16,7 @@ usage() {
 }
 
 do_deploy() {
-    logdir="$HOME/.ian/logs/deploy"
+    logdir="$KG_DIR/logs/deploy"
     mkdir -p "$logdir"
     # slightly annoying: '%z' prints '0500' but log files produced by Python have it as
     # '05:00'; GNU date supports '%:z' to do this but macOS date does not.
@@ -49,7 +49,7 @@ do_repo_setup() {
 do_machine_setup() {
     no_args "$@"
 
-    kgdir="$HOME/.ian"
+    kgdir="$KG_DIR"
     remote_repo="$kgdir/repos/master"
     if [[ -e "$remote_repo" ]]; then
         echo "aborting: remote repo already exists ($remote_repo)"

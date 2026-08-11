@@ -22,12 +22,14 @@ export async function prompt(
   conversationId: number,
   message: string,
   inferenceMode: string | null,
+  webSearchEnabled: boolean,
   onChunk: (event: any) => void,
 ) {
   const request: rpc.PromptRequest = {
     conversationId,
     message,
     inferenceMode,
+    webSearchEnabled,
   };
   await kgrpc.postStreaming("/api/prompt", request, onChunk);
 }

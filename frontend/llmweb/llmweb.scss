@@ -72,7 +72,8 @@
 }
 
 .model-selector {
-    text-align: right;
+    display: flex;
+    align-items: center;
     margin-bottom: 12px;
 
     label {
@@ -398,6 +399,65 @@
 
 .conversation-id {
     color: common.$faded-text-color;
+}
+
+.checkbox-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
+
+    input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        border: 1px solid #475569;
+        border-radius: 4px;
+        background-color: common.$background-color;
+        cursor: pointer;
+        position: relative;
+        transition: background-color 0.2s, border-color 0.2s;
+
+        &:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4);
+        }
+
+        &:checked {
+            background-color: #0ea5e9;
+            border-color: #0ea5e9;
+
+            &::after {
+                content: "";
+                position: absolute;
+                left: 5px;
+                top: 1px;
+                width: 5px;
+                height: 10px;
+                border: solid white;
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+            }
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    }
+
+    label {
+        color: common.$text-color;
+        cursor: pointer;
+    }
+
+    &.disabled label {
+        color: common.$faded-text-color;
+        cursor: not-allowed;
+    }
 }
 
 .transcript-page {

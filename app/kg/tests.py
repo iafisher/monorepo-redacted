@@ -16,10 +16,11 @@ Usage: kg SUBCMD
 
 Subcommands:
 
-  check-heartbeat    . Check the heartbeat file.
-  jobs               . Manage background jobs.
-  logs               . Print logs for apps.
-  r                  . Run a command on the remote server.
+  check-heartbeat       . Check the heartbeat file.
+  email-after-reboot    . Send an email after rebooting.
+  jobs                  . Manage background jobs.
+  logs                  . Print logs for apps.
+  r                     . Run a command on the remote server.
   shell
 
 
@@ -32,6 +33,13 @@ Usage: kg check-heartbeat ...
 Arguments:
 
   -max-age ARG
+
+
+------------
+
+Usage: kg email-after-reboot ...
+
+  Send an email after rebooting.
 
 
 ------------

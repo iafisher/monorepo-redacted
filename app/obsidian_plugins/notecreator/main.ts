@@ -87,6 +87,7 @@ class NewNoteModal extends Modal {
   async createNote(rawTitle: string) {
     // @ts-ignore
     const cwd = this.app.vault.adapter.basePath;
+    // TODO(2026-08): This should use the $KG_DIR environment variable.
     const cmd = `/Users/iafisher/.ian/repos/current/bin/obsidian notes create "${rawTitle}"`;
     exec(cmd, { cwd }, (error: any, stdout: string, stderr: string) => {
       console.log("Shell command exited.", { error });

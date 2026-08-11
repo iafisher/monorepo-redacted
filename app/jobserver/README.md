@@ -25,7 +25,7 @@ Supported keys for jobs:
 - `schedule`: e.g., `{"hourly": {"interval_mins": 30}}` or `{"daily": {"times_of_day": ["11pm"]}}`
 - `extra_path`: extra entries to add to the `PATH` environment variable (child jobs run with a limited set of directories on the `PATH`)
 - `extra_pythonpath`: extra entries to add to the `PYTHONPATH` environment variable (this usually is not necessary)
-- `working_directory`: run the job in this directory (defaults to `~/.ian/logs/<job>`)
+- `working_directory`: run the job in this directory (defaults to `$KG_DIR/logs/<job>`)
 
 ## Internals
 The daemon process loops forever, checking for work to do and then going to sleep briefly. It reads from a state file on disk to decide what to do next. After a job finishes, it writes to the state file.
@@ -44,7 +44,7 @@ To run child jobs, the jobserver uses the traditional `fork` + `exec` method.
 The jobserver sends an email when it boots up, to help detect crashes. On each machine, there is a heartbeat job that runs every 5 minutes and calls `touch ~/.ian/logs/heartbeat/heartbeat.empty`. Separately, a cron job (outside of the jobserver entirely) checks the age of the heartbeat file and sends an email if it is too old. This helps detect when the jobserver is down completely. The cron job is defined as:
 
 ```
-*/15 * * * * $HOME/.ian/repos/current/bin/kg check-heartbeat -max-age 30m >> $HOME/.ian/logs/heartbeat/cron.log 2>&1
+*/15 * * * * $KG_DIR/repos/current/bin/kg check-heartbeat -max-age 30m >> $KG_DIR/logs/heartbeat/cron.log 2>&1
 ```
 
 ### Scheduling

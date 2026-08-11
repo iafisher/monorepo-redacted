@@ -440,6 +440,7 @@ def prepare_env(job: Job) -> Dict[str, str]:
         "HOME": os.environ["HOME"],
         "PATH": os.environ["PATH"] + ":" + extra_path,
         "PYTHONPATH": pythonpath,
+        "KG_DIR": os.environ["KG_DIR"],
     }
 
     def _copy_opt(key: str) -> None:
