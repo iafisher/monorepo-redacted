@@ -131,20 +131,57 @@ for model_name in GptModel:
                 GPT,
                 family=MODEL_FAMILY_GPT,
                 token_limit=1_050_000,
-                nicknames=[
-                    "chatgpt-5.5",
-                    "chatgpt-5",
-                    "gpt-5",
-                    "gpt-5.5",
-                    "gpt5",
-                    "gpt5.5",
-                ],
+                nicknames=["gpt-5.5", "gpt5.5"],
                 tags=[TAG_SLOW],
                 token_cost=TokenCost(
                     per_1m_input_tokens=Decimal("5.00"),
                     per_1m_output_tokens=Decimal("30.00"),
                     per_1m_reasoning_tokens=None,
                     per_1m_cache_read_tokens=Decimal("0.50"),
+                    per_1m_cache_creation_tokens=None,
+                ),
+            )
+        case GptModel.GPT_5_6_SOL:
+            model_info = ModelInfo(
+                GPT,
+                family=MODEL_FAMILY_GPT,
+                token_limit=1_050_000,
+                nicknames=["sol"],
+                tags=[TAG_SLOW],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("5.00"),
+                    per_1m_output_tokens=Decimal("30.00"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.50"),
+                    per_1m_cache_creation_tokens=None,
+                ),
+            )
+        case GptModel.GPT_5_6_TERRA:
+            model_info = ModelInfo(
+                GPT,
+                family=MODEL_FAMILY_GPT,
+                token_limit=1_050_000,
+                nicknames=["terra"],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("2.00"),
+                    per_1m_output_tokens=Decimal("12.00"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.20"),
+                    per_1m_cache_creation_tokens=None,
+                ),
+            )
+        case GptModel.GPT_5_6_LUNA:
+            model_info = ModelInfo(
+                GPT,
+                family=MODEL_FAMILY_GPT,
+                token_limit=1_050_000,
+                nicknames=["luna"],
+                tags=[TAG_FAST],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("0.20"),
+                    per_1m_output_tokens=Decimal("1.20"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.02"),
                     per_1m_cache_creation_tokens=None,
                 ),
             )

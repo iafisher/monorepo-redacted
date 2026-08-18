@@ -308,7 +308,7 @@ class ModelSelectorView {
       { value: "claude-sonnet", label: "Sonnet" },
       { value: "claude-opus", label: "Opus" },
       { value: "claude-haiku", label: "Haiku" },
-      { value: "gpt-5", label: "GPT 5" },
+      { value: "terra", label: "GPT 5.6 Terra" },
       { value: "gemini-2.5-pro", label: "Gemini 2.5" },
     ];
 

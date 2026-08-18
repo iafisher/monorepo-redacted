@@ -13,11 +13,14 @@ class GptModel(StrEnum):
     GPT_5_2 = "gpt-5.2"
     GPT_5_2_CODEX = "gpt-5.2-codex"
     GPT_5_5 = "gpt-5.5"
+    GPT_5_6_SOL = "gpt-5.6-sol"
+    GPT_5_6_TERRA = "gpt-5.6-terra"
+    GPT_5_6_LUNA = "gpt-5.6-luna"
     GPT_MOCK_WEB_SEARCH = "gpt-mock-web-search"
 
     GPT_MINI_LATEST = GPT_5_4_MINI
     GPT_NANO_LATEST = GPT_5_4_NANO
-    GPT_5_LATEST = GPT_5_5
+    GPT_5_LATEST = GPT_5_6_TERRA
 
 
 class ClaudeModel(StrEnum):

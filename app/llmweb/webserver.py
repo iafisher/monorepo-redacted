@@ -421,7 +421,7 @@ def api_prompt():
                 summary_response = llm.oneshot(
                     db,
                     f"<query>\n{user_prompt}\n</query>\n\n<response>\n{response.output_text}\n</response>\n",
-                    model=llm.GptModel.GPT_NANO_LATEST,
+                    model=llm.GptModel.GPT_5_6_LUNA,
                     system_prompt=SUMMARY_PROMPT,
                     app_name="llmweb",
                     options=llm.InferenceOptions.fast(),
