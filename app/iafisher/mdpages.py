@@ -125,7 +125,7 @@ def maybe_upload_page_to_site(
     publish_after_property = "iafisher-publish-after"
     publish_after = properties.get(publish_after_property)
     if publish_after is not None:
-        if publish_after > timehelper.today():
+        if publish_after >= timehelper.today():
             print(f"SKIPPING {path_str} (publish after {publish_after.isoformat()})")
             return False
         else:

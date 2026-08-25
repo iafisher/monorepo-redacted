@@ -153,6 +153,8 @@ class Test(BaseExpectStdout):
             self.assertExpectedInline(self.stdout(), """""")
 
     def test_timeout(self):
+        # 2026-08: Flaky test failure.
+
         # TODO(2026-01): Spawn request handlers in their own threads so that `sleep_seconds`
         # doesn't happen on the main thread. (`server.stop()` waits for all request handlers
         # to finish.)

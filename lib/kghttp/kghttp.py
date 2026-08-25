@@ -1,3 +1,4 @@
+import json as jsonlib
 import random
 import time
 import urllib.parse
@@ -186,13 +187,18 @@ def _request(
             retry_state.max_attempts(),
         )
 
+        if json is not None:
+            assert data is None
+            data = jsonlib.dumps(json, cls=CustomJSONEncoder)
+            headers = headers.copy() if headers is not None else {}
+            headers["Content-Type"] = "application/json"
+
         response = None
         try:
             response = requests.request(
                 verb,
                 url,
                 data=data,
-                json=json,
                 timeout=timeout_secs,
                 headers=headers,
                 allow_redirects=allow_redirects,
@@ -363,3 +369,12 @@ class RetryState:
             )
         else:
             return base_secs
+
+
+class CustomJSONEncoder(jsonlib.JSONEncoder):
+    @override
+    def default(self, o: Any):
+        if isinstance(o, dt.date):
+            return o.isoformat()
+
+        return super().default(o)
