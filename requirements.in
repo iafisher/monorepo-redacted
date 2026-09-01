@@ -3,6 +3,7 @@ anki == 24.11
 anthropic == 0.79.0
 beautifulsoup4
 cryptography
+edge-tts
 expecttest
 flask == 3.1.1
 google-api-python-client == 2.176.0

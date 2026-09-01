@@ -1,4 +1,5 @@
 import markdown
+import traceback
 import yaml
 from markdown.extensions import Extension
 from markdown.postprocessors import Postprocessor
@@ -62,20 +63,27 @@ def main_upload(
         hashes = get_mdpages_hashes(api_key, base_url)
     on_site_but_not_local = set(hashes.keys())
 
+    any_failed = False
     for subpath in dirpath.glob("**/*.md"):
-        if maybe_upload_page_to_site(
-            api_key,
-            subpath,
-            base_url=base_url,
-            hashes=hashes,
-            root=dirpath,
-            verbose=verbose,
-            set_page_id=not do_not_set_page_id,
-        ):
-            relpath = subpath.relative_to(dirpath)
-            print(f"{relpath}: done")
-
+        relpath = subpath.relative_to(dirpath)
         on_site_but_not_local.discard(make_mdpages_path(subpath, root=dirpath))
+        try:
+            uploaded = maybe_upload_page_to_site(
+                api_key,
+                subpath,
+                base_url=base_url,
+                hashes=hashes,
+                root=dirpath,
+                verbose=verbose,
+                set_page_id=not do_not_set_page_id,
+            )
+        except Exception:
+            eprint(traceback.format_exc())
+            eprint(f"\nFailed to upload {relpath}")
+            any_failed = True
+        else:
+            if uploaded:
+                print(f"{relpath}: done")
 
     delete_page_from_site(api_key, base_url, list(on_site_but_not_local))
 
@@ -83,9 +91,18 @@ def main_upload(
         if image_file.name in images_on_site:
             continue
 
-        upload_image_to_site(image_file, api_key=api_key, base_url=base_url)
         relpath = image_file.relative_to(dirpath)
-        print(f"{relpath}: done")
+        try:
+            upload_image_to_site(image_file, api_key=api_key, base_url=base_url)
+        except Exception:
+            eprint(traceback.format_exc())
+            eprint(f"\nFailed to upload {relpath}")
+            any_failed = True
+        else:
+            print(f"{relpath}: done")
+
+    if any_failed:
+        sys.exit(1)
 
 
 def get_mdpages_hashes(api_key: str, base_url: str) -> Dict[str, str]:
@@ -128,10 +145,6 @@ def maybe_upload_page_to_site(
         if publish_after >= timehelper.today():
             print(f"SKIPPING {path_str} (publish after {publish_after.isoformat()})")
             return False
-        else:
-            # The JSON serializer in `kghttp.post` can't handle date objects. The server
-            # doesn't need this property anyway, so we just remove it.
-            del properties[publish_after_property]
 
     if path.stem == "Untitled":
         print(f"SKIPPING {path_str}")

@@ -482,13 +482,15 @@ def api_prompt():
 
     def consume_chunks():
         while True:
-            timeout_secs = 120
+            timeout_secs = 180
             try:
                 chunk = q.get(timeout=timeout_secs)
             except queue.Empty:
                 # TODO(2026-01): Store this in the database?
                 chunk = ChunkError(
                     f"The LLM call timed out after {pluralize(timeout_secs, 'second')}."
+                    " The LLM will continue running on the server, and refreshing the page"
+                    " may show the output if it ever becomes available."
                 )
 
             match chunk.chunk_type:
