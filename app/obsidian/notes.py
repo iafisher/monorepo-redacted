@@ -1,26 +1,76 @@
 import unicodedata
 
-from lib import command, obsidian
+from iafisher import timehelper
 from iafisher.prelude import *
+from lib import command, obsidian
 
 
 def main_create(
-    original_title: str, *, vault: pathlib.Path = obsidian.Vault.main().path()
+    *,
+    title: Annotated[
+        str,
+        command.Extra(
+            help=(
+                "the title of the Markdown file "
+                "(also used to infer file name, e.g., 'Some thoughts' results in '$DATE-some-thoughts.md')"
+            )
+        ),
+    ],
+    filename_override: Annotated[
+        Optional[str],
+        command.Extra(
+            help="override -title for inferring file name (should not include date)"
+        ),
+    ],
+    vault: pathlib.Path = obsidian.Vault.main().path(),
+    preview: Annotated[
+        bool,
+        command.Extra(
+            help="print preview of file to be created instead of actually creating it"
+        ),
+    ],
 ) -> None:
     today = dt.date.today()
-    filename, parent = title_to_filename_and_parent(original_title, today=today)
+    filename = title_to_filename(opt_or(filename_override, title), today=today)
 
-    text = (vault / "attachments" / "templates" / "template-new-note.md").read_text()
-    text = text.replace("{TITLE}", original_title)
-    text = text.replace("{DATE}", today.isoformat())
-    text = text.replace("{PARENT}", parent)
-    (vault / filename).write_text(text)
-    print(filename)
+    def rel(p: pathlib.Path) -> pathlib.Path:
+        return p.relative_to(vault)
+
+    today = timehelper.today()
+    archive_path = vault / "archive" / f"{today.year}" / f"{today.month:0>2}" / filename
+    live_path = vault / "live" / "to-be-archived" / filename
+
+    if archive_path.exists():
+        raise KgError(
+            "A file with this name already exists.", archive_path=archive_path
+        )
+
+    text = f"""\
+---
+date-created: "{today}"
+archive-path: "{rel(archive_path)}"
+created-by: "human:iafisher"
+---
+
+# {title}
+"""
+
+    if preview:
+        print("Archive path:", rel(archive_path))
+        print("Live path:   ", rel(live_path))
+        print()
+        print(text)
+    else:
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+        archive_path.write_text(text)
+        live_path.hardlink_to(archive_path)
+        print(rel(live_path))
 
 
 def main_rename(
     *, from_: str, to: str, vault: pathlib.Path = obsidian.Vault.main().path()
 ) -> None:
+    # TODO(2026-09): After vault reorganization, I probably don't need this function anymore.
     destination = to
     if not destination.endswith(".md"):
         destination += ".md"
@@ -42,11 +92,7 @@ def main_rename(
     )
 
 
-def title_to_filename_and_parent(t: str, *, today: dt.date) -> Tuple[str, str]:
-    """
-    Convert title to filename and return `(filename, parent_article)`.
-    """
-    # Keep this in sync with `app/obsidian_plugins/notecreator/main.ts`
+def title_to_filename(t: str, *, today: dt.date) -> str:
     t = t.lower()
     t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode("utf-8")
     t = remove_suffix(t, suffix=".md")
@@ -55,15 +101,8 @@ def title_to_filename_and_parent(t: str, *, today: dt.date) -> Tuple[str, str]:
     t = re.sub(r"\s*-\s*", "-", t)
     t = re.sub(r"\s+", "-", t)
 
-    yyyy_mm = f"{today.year}-{today.month:0>2}"
-    if t.startswith("book-"):
-        parent = f"{today.year}-books"
-    elif t.startswith("film-"):
-        parent = f"{today.year}-films"
-    else:
-        parent = f"{yyyy_mm}"
-
-    return f"{yyyy_mm}-{t}.md", parent
+    yyyy_mm_dd = f"{today.year}-{today.month:0>2}-{today.day:0>2}"
+    return f"{yyyy_mm_dd}-{t}.md"
 
 
 cmd = command.Group(help="Work with Obsidian notes.")

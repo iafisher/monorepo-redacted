@@ -1,7 +1,11 @@
+import re
+import tempfile
+
 from iafisher.prelude import *
 from lib import command
 from lib.testing import *
 
+from . import verify_links
 from .main import cmd
 from .tidy import TopicLink, TopicPage, TopicPageSection
 
@@ -99,6 +103,47 @@ class Test(Base):
 
         self.assertEqual(TOPIC_PAGE, str(topic_page))
 
+    def test_verify_links(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = pathlib.Path(tmpdir)
+            (tmpdir / "live" / "subdir").mkdir(parents=True)
+            (tmpdir / "archive" / "2026" / "09").mkdir(parents=True)
+
+            ok_path = tmpdir / "archive" / "2026" / "09" / "2026-09-12-ok.md"
+            ok_path.write_text(
+                "---\narchive-path: archive/2026/09/2026-09-12-ok.md\n---\n"
+            )
+            os.link(ok_path, (tmpdir / "live" / "ok.md"))
+
+            (tmpdir / "live" / "skip.md").write_text(
+                "This file has no archive-path property.\n"
+            )
+
+            (tmpdir / "live" / "subdir" / "fail-not-found.md").write_text(
+                "---\narchive-path: archive/fail-not-found.md\n---\n"
+            )
+
+            fail_not_link_contents = (
+                "---\narchive-path: archive/2026/09/2026-09-12-fail-not-link.md\n---\n"
+            )
+            (
+                tmpdir / "archive" / "2026" / "09" / "2026-09-12-fail-not-link.md"
+            ).write_text(fail_not_link_contents)
+            (tmpdir / "live" / "subdir" / "fail-not-link.md").write_text(
+                fail_not_link_contents
+            )
+
+            stdout = self.capture_stdout(lambda: verify_links._verify(tmpdir))
+            self.assertExpectedInline(
+                re.sub(r" [0-9]+ ", " <redacted> ", stdout),
+                """\
+PASS: live/ok.md
+SKIP: live/skip.md
+FAIL: live/subdir/fail-not-found.md (archive/fail-not-found.md not found)
+FAIL: live/subdir/fail-not-link.md (inode mismatch: <redacted> != <redacted> archive/2026/09/2026-09-12-fail-not-link.md)
+""",
+            )
+
     def test_help_text(self):
         self.assertExpectedInline(
             command.get_help_text_recursive(cmd, program="obsidian"),
@@ -109,10 +154,11 @@ Usage: obsidian SUBCMD
 
 Subcommands:
 
-  notes       . Work with Obsidian notes.
-  plugins     . Manage Obsidian plugins.
-  snapshot    . Snapshot an Obsidian vault with Git.
-  tidy        . Tidy up the vault.
+  notes           . Work with Obsidian notes.
+  plugins         . Manage Obsidian plugins.
+  snapshot        . Snapshot an Obsidian vault with Git.
+  tidy            . Tidy up the vault.
+  verify-links    . Verify that files under live/ are hard links to archive/.
 
 
 ------------
@@ -135,8 +181,10 @@ Usage: obsidian notes create ...
 
 Arguments:
 
-  original_title
-  [-vault ARG]      . (default: ~/Obsidian/main)
+  -title ARG                  . the title of the Markdown file (also used to infer file name, e.g., 'Some thoughts' results in '$DATE-some-thoughts.md')
+  [-filename-override ARG]    . override -title for inferring file name (should not include date)
+  [-preview]                  . print preview of file to be created instead of actually creating it
+  [-vault ARG]                . (default: ~/Obsidian/main)
 
 
 ------------
@@ -224,5 +272,16 @@ Usage: obsidian tidy ...
 Arguments:
 
  [-write]
+
+
+------------
+
+Usage: obsidian verify-links ...
+
+  Verify that files under live/ are hard links to archive/.
+
+Arguments:
+
+ [-vault ARG]    . (default: ~/Obsidian/main)
 """,
         )

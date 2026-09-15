@@ -296,14 +296,15 @@ def _create_thinking_param(
             ClaudeModel.FABLE_5
             | ClaudeModel.OPUS_4_6
             | ClaudeModel.OPUS_4_8
+            | ClaudeModel.OPUS_5
             | ClaudeModel.SONNET_4_6
             | ClaudeModel.SONNET_5
         ):
             return _create_thinking_param_adaptive(options)
         case ClaudeModel.MOCK_LOCAL_TOOL_USE | ClaudeModel.MOCK_WEB_SEARCH:
             return None, None
-        case _:
-            impossible()
+
+    impossible()
 
 
 def _create_thinking_param_adaptive(options: InferenceOptions) -> Tuple[Any, Any]:

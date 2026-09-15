@@ -29,17 +29,6 @@
       "fields": [{ "name": "conversation_id", "type": "int" }]
     },
     {
-      "name": "VoteRequest",
-      "fields": [
-        { "name": "message_id", "type": "int" },
-        { "name": "vote", "type": "string" }
-      ]
-    },
-    {
-      "name": "VoteResponse",
-      "fields": []
-    },
-    {
       "name": "PromptRequest",
       "fields": [
         { "name": "conversation_id", "type": "int" },

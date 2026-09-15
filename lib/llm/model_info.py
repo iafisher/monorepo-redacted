@@ -251,6 +251,21 @@ for model_name in ClaudeModel:
                 Claude,
                 family=MODEL_FAMILY_CLAUDE,
                 token_limit=1_000_000,
+                nicknames=["claude-opus-4.8", "opus-4.8"],
+                tags=[TAG_SLOW],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("5.00"),
+                    per_1m_output_tokens=Decimal("25.00"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.50"),
+                    per_1m_cache_creation_tokens=Decimal("10.00"),
+                ),
+            )
+        case ClaudeModel.OPUS_5:
+            model_info = ModelInfo(
+                Claude,
+                family=MODEL_FAMILY_CLAUDE,
+                token_limit=1_000_000,
                 nicknames=["claude-opus", "opus"],
                 tags=[TAG_SLOW],
                 token_cost=TokenCost(
@@ -346,13 +361,29 @@ for model_name in GeminiModel:
                 Gemini,
                 family=MODEL_FAMILY_GEMINI,
                 token_limit=1_048_576,
-                nicknames=["gemini-flash"],
+                nicknames=[],
                 tags=[TAG_FAST],
                 token_cost=TokenCost(
                     per_1m_input_tokens=Decimal("0.30"),
                     per_1m_output_tokens=Decimal("2.50"),
                     per_1m_reasoning_tokens=Decimal("2.50"),
                     per_1m_cache_read_tokens=Decimal("0.03"),
+                    per_1m_cache_creation_tokens=None,
+                ),
+            )
+        case GeminiModel.GEMINI_3_8_FLASH:
+            model_info = ModelInfo(
+                Gemini,
+                family=MODEL_FAMILY_GEMINI,
+                token_limit=1_048_576,
+                nicknames=["gemini-flash"],
+                tags=[TAG_FAST],
+                token_cost=TokenCost(
+                    # Prices increase on 2027-01-01. These prices are through 2026-12-31.
+                    per_1m_input_tokens=Decimal("0.75"),
+                    per_1m_output_tokens=Decimal("3.75"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.075"),
                     per_1m_cache_creation_tokens=None,
                 ),
             )

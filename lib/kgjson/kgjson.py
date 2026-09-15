@@ -157,7 +157,8 @@ class Base:
                 return None
             elif issubclass(expected_type, Base):
                 return expected_type._deserialize_dict(x, path=path, validate=validate)
-            elif isinstance(x, expected_type):
+            # `expected_type is Any` is necessary to support `StrDict` annotations.
+            elif expected_type is Any or isinstance(x, expected_type):
                 return x
             elif expected_type is dt.date and isinstance(x, str):
                 try:

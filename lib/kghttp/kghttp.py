@@ -376,5 +376,7 @@ class CustomJSONEncoder(jsonlib.JSONEncoder):
     def default(self, o: Any):
         if isinstance(o, dt.date):
             return o.isoformat()
+        elif isinstance(o, pathlib.Path):
+            return o.as_posix()
 
         return super().default(o)

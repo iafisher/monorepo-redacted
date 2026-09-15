@@ -33,17 +33,6 @@ class StartResponse(kgjson.Base):
 
 
 @dataclass
-class VoteRequest(kgjson.Base):
-    message_id: int
-    vote: str
-
-
-@dataclass
-class VoteResponse(kgjson.Base):
-    pass
-
-
-@dataclass
 class PromptRequest(kgjson.Base):
     conversation_id: int
     message: str

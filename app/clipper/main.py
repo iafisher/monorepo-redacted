@@ -4,7 +4,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from typing import Literal
 
-import pdftotext
+# import pdftotext
 import trafilatura
 from bs4 import BeautifulSoup, Tag
 
@@ -295,9 +295,10 @@ def _clean(
         case "markdown":
             pass
         case "pdf":
-            pdf = pdftotext.PDF(FakeReader(content))  # type: ignore
-            format = "markdown"
-            content = "\n\n".join(pdf).encode("utf8")  # type: ignore
+            todo()
+            # pdf = pdftotext.PDF(FakeReader(content))
+            # format = "markdown"
+            # content = "\n\n".join(pdf).encode("utf8")
 
     if title is None:
         title = fallback_title

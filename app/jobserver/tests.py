@@ -399,6 +399,82 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  0            XXX
 """,
             )
 
+    def test_output_buffering(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.environ["KG_TEST_DIR"] = tmpdir
+            tmpdirp = Path(tmpdir)
+            os.mkdir(tmpdirp / "apps")
+            appdir = tmpdirp / "apps" / "jobserver"
+            os.mkdir(appdir)
+            os.mkdir(tmpdirp / "apps" / "testjob")
+
+            with localdb.connect() as db:
+                # TODO(2025-12): common test utility
+                schema_path = kgenv.get_code_dir() / "migrations" / "initial-sqlite.sql"
+                db.executescript(schema_path.read_text())
+
+            python_script = tmpdirp / "test.py"
+            python_script.write_text(
+                """\
+import sys
+
+print("first line")
+print("second line", file=sys.stderr, flush=True)
+"""
+            )
+
+            job1 = Job(
+                name="testjob",
+                cmd=["python3", python_script.as_posix()],
+                schedule=Schedule(hourly=HourlySchedule(interval_mins=1)),
+                date_added=dt.date(2025, 1, 1),
+                enabled=True,
+                run_now=True,
+                machines=["laptop"],
+            )
+            job1_config_path = tmpdirp / "apps" / "testjob" / "jobserver.json"
+            job1_config_path.write_text(State(jobs=[job1]).serialize())
+
+            state_file = appdir / "state.json"
+            state = State(jobs=[job1])
+            state_file.write_text(state.serialize())
+
+            # TODO(2025-02): absolute path
+            py_exe = ".venv/bin/python3"
+            kg_exe = "app/kg/main.py"
+            proc = None
+            try:
+                proc = subprocess.Popen(
+                    [
+                        py_exe,
+                        kg_exe,
+                        "jobs",
+                        "daemon",
+                        "start",
+                        "-wakeup-interval",
+                        "10ms",
+                        "-port",
+                        str(TEST_PORT),
+                    ]
+                )
+                print("Started process", proc.pid)
+                wait_for_pid_lockfile(appdir)
+                self.assertTrue((appdir / "state.lock").exists())
+                time.sleep(0.5)
+            finally:
+                if proc is not None:
+                    proc.terminate()
+                    proc.wait()
+                    print("Killed process", proc.pid)
+
+            logs_dir = tmpdirp / "logs" / "testjob"
+            testjob_paths = list(p for p in logs_dir.iterdir() if p.suffix == ".log")
+            self.assertEqual(len(testjob_paths), 1)
+            stdout_path = testjob_paths[0]
+            # Ensure that the lines are printed in order despite the `flush=True` in the
+            # second print.
+            self.assertEqual("first line\nsecond line\n", stdout_path.read_text())
+
     @unittest.skip("manual test")
     def test_sighup_bug(self):
         warnings.simplefilter("ignore", ResourceWarning)

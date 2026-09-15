@@ -58,6 +58,10 @@ def get_app_dir(appname: str) -> pathlib.Path:
     return get_ian_dir() / "apps" / appname
 
 
+# TODO(2026-09): It's not clear to me whether `get_code_dir` should look at a separate
+# environment variable, or whether it should use $KG_DIR / repos / current
+
+
 def get_code_dir_opt() -> Optional[pathlib.Path]:
     p = os.environ.get(ENV_CODE_DIR)
     if p is None or p == "":

@@ -154,25 +154,6 @@ def api_start():
     return webserver.json_response2(response)
 
 
-@app.route("/api/vote", methods=["POST"])
-def api_vote():
-    rpc_request = webserver.request(rpc.VoteRequest)
-    if rpc_request.vote not in ("", "up", "down"):
-        return webserver.json_response_error("vote must be '', 'up', or 'down'")
-
-    with pgdb.connect() as db:
-        db.execute(
-            """
-            UPDATE llmweb_messages
-            SET vote = %(vote)s
-            WHERE message_id = %(message_id)s
-            """,
-            dict(message_id=rpc_request.message_id, vote=rpc_request.vote),
-        )
-
-    return webserver.json_response2(rpc.VoteResponse())
-
-
 @app.route("/api/transcript/<int:conversation_id>", methods=["GET"])
 def api_transcript(conversation_id: int):
     with pgdb.connect() as db:

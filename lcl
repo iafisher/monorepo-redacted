@@ -10,6 +10,7 @@ main() {
     shift
     export KG_OVERRIDE_DB_NAME=testdb
     export KG_PROGRAM_NAME="$cmd"
+    export PYTHONPATH="$d:$HOME/.ian/pythonpath"
     exec .venv/bin/python3 "app/$lib/main.py" "$@"
 }
 

@@ -1,192 +1,159 @@
-import asyncio
-import traceback
+import base64
+import os
 
-import edge_tts
-
+from app.zhongwen import ankiconnect, llmgen, tts
+from iafisher import timehelper
 from iafisher.prelude import *
-from iafisher.scripting import q
-from lib import command, kghttp, llm, pgdb
+from lib import command
 
 
 # Anki copies the media files into its own directory (~/Library/Application Support/Anki2/User 1/collection.media)
 # so we could use a temporary directory, but it's useful to save them permanently in case the Anki
 # upload fails.
-ANKI_MEDIA_DIRECTORY = pathlib.Path.home() / "Documents" / "AnkiMedia"
-ANKI_DECK = "Chinese 2026"
-ANKI_MODEL = "Chinese audio"
+MEDIA_DIRECTORY = pathlib.Path.home() / "Documents" / "AnkiMedia"
 
 
-def main_anki_upload(
-    *,
-    pinyin: str,
-    translation: str,
-    audio_word_path: pathlib.Path,
-    audio_sentence_path: pathlib.Path,
+def main_anki_question(question: str) -> None:
+    llm_question_note = llmgen.generate_question_note(question)
+
+    today = timehelper.today()
+    hsh = sha256(question)[:8]
+    d = MEDIA_DIRECTORY / f"question-{today}-{sha256(hsh)}"
+    d.mkdir()
+    LOG.info("saving MP3 files to %s", d)
+
+    question_audio = d / "question.mp3"
+    tts.save_mp3(llm_question_note.question_hanzi, question_audio)
+    answer_audio = d / "answer.mp3"
+    tts.save_mp3(llm_question_note.answer_hanzi, answer_audio)
+
+    note = ankiconnect.AnkiQuestionNote(
+        question_audio=question_audio,
+        question_pinyin=llm_question_note.question_pinyin,
+        question_hanzi=llm_question_note.question_hanzi,
+        question_translation=question,
+        answer_audio=answer_audio,
+        answer_pinyin=llm_question_note.answer_pinyin,
+        answer_hanzi=llm_question_note.answer_hanzi,
+        answer_translation=llm_question_note.answer_translation,
+    )
+    ankiconnect.upload_note(note)
+
+    print()
+    print(f"{note.question_hanzi} ({note.question_pinyin}) – '{question}'")
+    print()
+    print(f"{note.answer_hanzi} ({note.answer_pinyin} - '{note.answer_translation}')")
+
+
+def main_anki_word(
+    *, pinyin: str, translation: str, skip_duplicate_check: bool
 ) -> None:
-    pinyin_word = _extract_word(pinyin)
-    word_translation = _extract_word(translation)
-    _upload_to_anki(
-        pinyin_word=pinyin_word,
-        word_translation=word_translation,
-        pinyin_sentence=pinyin,
-        sentence_translation=translation,
-        audio_word_path=audio_word_path,
-        audio_sentence_path=audio_sentence_path,
+    if not skip_duplicate_check:
+        _ensure_not_already_in_deck(pinyin)
+
+    llm_word_note = llmgen.generate_word_note(pinyin=pinyin, translation=translation)
+
+    today = timehelper.today()
+    d = MEDIA_DIRECTORY / f"{pinyin.replace(' ', '-')}-{today}-{_four_random_chars()}"
+    d.mkdir()
+    LOG.info("saving MP3 files to %s", d)
+
+    word_audio = d / "word.mp3"
+    tts.save_mp3(llm_word_note.hanzi, word_audio)
+    sentence1_audio = d / "sentence1.mp3"
+    tts.save_mp3(llm_word_note.sentence1_hanzi, sentence1_audio)
+    sentence2_audio = d / "sentence2.mp3"
+    tts.save_mp3(llm_word_note.sentence2_hanzi, sentence2_audio)
+    sentence3_audio = d / "sentence3.mp3"
+    tts.save_mp3(llm_word_note.sentence3_hanzi, sentence3_audio)
+
+    note = ankiconnect.AnkiWordNote(
+        word_audio=word_audio,
+        sentence1_audio=sentence1_audio,
+        sentence2_audio=sentence2_audio,
+        sentence3_audio=sentence3_audio,
+        pinyin=pinyin,
+        hanzi=llm_word_note.hanzi,
+        translation=translation,
+        sentence1_pinyin=llm_word_note.sentence1_pinyin,
+        sentence1_hanzi=llm_word_note.sentence1_hanzi,
+        sentence1_translation=llm_word_note.sentence1_translation,
+        sentence2_pinyin=llm_word_note.sentence2_pinyin,
+        sentence2_hanzi=llm_word_note.sentence2_hanzi,
+        sentence2_translation=llm_word_note.sentence2_translation,
+        sentence3_pinyin=llm_word_note.sentence3_pinyin,
+        sentence3_hanzi=llm_word_note.sentence3_hanzi,
+        sentence3_translation=llm_word_note.sentence3_translation,
     )
+    ankiconnect.upload_note(note)
+
+    print()
+    print(f"{note.hanzi} ({pinyin}) – '{translation}'")
+    print()
+    print(f"{note.sentence1_hanzi} ({note.sentence1_pinyin})")
+    print(note.sentence1_translation)
+    print()
+    print(f"{note.sentence2_hanzi} ({note.sentence2_pinyin})")
+    print(note.sentence2_translation)
+    print()
+    print(f"{note.sentence3_hanzi} ({note.sentence3_pinyin})")
+    print(note.sentence3_translation)
 
 
-def main_tts(*, pinyin: str, translation: str, overwrite: bool) -> None:
-    pinyin_word = _extract_word(pinyin)
-    word_translation = _extract_word(translation)
-    h = sha256(pinyin)[:12]
-    pinyin_word_for_filename = pinyin_word.replace(" ", "-")
-    audio_word_path = ANKI_MEDIA_DIRECTORY / f"{pinyin_word_for_filename}-{h}-word.mp3"
-    audio_sentence_path = (
-        ANKI_MEDIA_DIRECTORY / f"{pinyin_word_for_filename}-{h}-sentence.mp3"
-    )
-    if not overwrite:
-        _raise_if_existing(audio_word_path)
-        _raise_if_existing(audio_sentence_path)
-
-    hanzi = _pinyin_to_hanzi(pinyin)
-    hanzi_word = _extract_word(hanzi)
-    LOG.info("transliterated: %s", hanzi)
-    asyncio.run(_save_mp3(hanzi_word, audio_word_path))
-    LOG.info("wrote to file: %s", audio_word_path)
-    asyncio.run(_save_mp3(hanzi, audio_sentence_path))
-    LOG.info("wrote to file: %s", audio_sentence_path)
-
-    try:
-        _upload_to_anki(
-            pinyin_word=pinyin_word,
-            word_translation=word_translation,
-            pinyin_sentence=pinyin,
-            sentence_translation=translation,
-            audio_word_path=audio_word_path,
-            audio_sentence_path=audio_sentence_path,
-        )
-    except Exception:
-        eprint(traceback.format_exc())
-        eprint(
-            "\n\nFailed to upload to Anki."
-            f" Re-run with `anki-upload -translation {q(translation)}"
-            f" -pinyin {q(pinyin)}"
-            f" -audio-word-path {q(audio_word_path.as_posix())}"
-            f" -audio-sentence-path {q(audio_sentence_path.as_posix())}`."
-        )
-        sys.exit(1)
-
-
-def _raise_if_existing(path: pathlib.Path) -> None:
-    if path.exists():
-        raise KgError(
-            "I will not overwrite an existing file unless the -overwrite flag is passed.",
-            path=path,
-        )
-
-
-bracketed_word_rgx = lazy_re(r"^[^[]+\[([^\]]+)\].+$")
-
-
-def _extract_word(sentence: str) -> str:
-    m = bracketed_word_rgx.get().match(sentence)
-    if m is None:
-        raise KgError(
-            "The sentence does not contain a bracketed word.", sentence=sentence
-        )
-    return m.group(1)
-
-
-PINYIN_TO_HANZI_SYSTEM_PROMPT = """\
-You transliterate Chinese sentences from Pinyin to Chinese characters.
-
-If ambiguous, make your best guess. Assume elementary vocabulary for a language
-learner.
-
-Retain all punctuation, including square brackets.
-
-Respond with just the Chinese characters. Do not output anything else.
+"""
+- Anki practice
+- Watch Street Talk video: first watch with only character subtitles, then watch with character + pinyin subtitles, then watch again and repeat each sentence
+- Live chat games
+    - Duì bu duì: Tutor says a sentence, I say duì or bu duì
+    - Guess the word: Random noun picked, tutor describes in 2 sentences, I guess the word
 """
 
 
-def _pinyin_to_hanzi(pinyin: str) -> str:
-    with pgdb.connect() as db:
-        response = llm.oneshot(
-            db,
-            pinyin,
-            model=llm.ANY_FAST_MODEL,
-            system_prompt=PINYIN_TO_HANZI_SYSTEM_PROMPT,
-            app_name="zhongwen::pinyin",
-            options=llm.InferenceOptions.fast(),
+def main_games_dui_bu_dui(*, n: int = 8) -> None:
+    sentences = llmgen.generate_dui_bu_dui_prompt(n)
+    prompt = llmgen.DUI_BU_DUI_GAME_PROMPT_PRELUDE + "\n\n" + sentences
+    print(prompt)
+    print()
+    print("---")
+    print()
+    print("Copy-paste the above into Live Chat mode to play the game 'Duì bu duì'.")
+
+
+def main_test_check_word(pinyin: str) -> None:
+    _ensure_not_already_in_deck(pinyin)
+    print("OK.")
+
+
+def _ensure_not_already_in_deck(pinyin: str) -> None:
+    matching_notes = ankiconnect.search_notes(pinyin)
+    existing_notes = [n for n in matching_notes if n.has_field_value("pinyin", pinyin)]
+    if len(existing_notes) != 0:
+        raise KgError(
+            "There is already a word with the same pinyin in the Anki deck."
+            " If the new word uses different characters, then use a flag to override this check.",
+            pinyin=pinyin,
+            existing_notes=existing_notes,
         )
-        return response.output_text
 
 
-async def _save_mp3(hanzi: str, path: pathlib.Path) -> None:
-    voice = "zh-CN-XiaoxiaoNeural"
-    LOG.info("start: generating audio: %s", hanzi)
-    await edge_tts.Communicate(hanzi, voice).save(path.as_posix())
-    LOG.info("end:   generating audio: %s", hanzi)
-
-
-def _upload_to_anki(
-    *,
-    pinyin_word: str,
-    word_translation: str,
-    pinyin_sentence: str,
-    sentence_translation: str,
-    audio_word_path: pathlib.Path,
-    audio_sentence_path: pathlib.Path,
-) -> None:
-    def _audio(path: pathlib.Path) -> StrDict:
-        return {"path": path.as_posix(), "filename": path.name, "fields": ["Front"]}
-
-    payload = {
-        "action": "addNote",
-        "version": 6,
-        "params": {
-            "note": {
-                "deckName": ANKI_DECK,
-                "modelName": ANKI_MODEL,
-                "fields": {
-                    "Front": "🔊 ",
-                    "Word Pinyin": pinyin_word,
-                    "Word translation": word_translation,
-                    "Sentence Pinyin": pinyin_sentence,
-                    "Sentence translation": sentence_translation,
-                },
-                "options": {"allowDuplicate": False},
-                "audio": [
-                    _audio(audio_word_path),
-                    _audio(audio_sentence_path),
-                    _audio(audio_word_path),
-                ],
-            }
-        },
-    }
-
-    LOG.info("start: uploading to Anki")
-    http_response = kghttp.post("http://127.0.0.1:8765", json=payload)
-    LOG.info("end:   uploading to Anki")
-
-    json_response = http_response.json()
-    if json_response["result"] is None:
-        raise KgError("AnkiConnect response missing", error=json_response.get("error"))
+def _four_random_chars() -> str:
+    return base64.urlsafe_b64encode(os.urandom(3)).decode("utf8")
 
 
 cmd = command.Group()
-cmd.add2(
-    "anki-upload",
-    main_anki_upload,
-    less_logging=False,
-    help="Add an existing recording to my Anki deck.",
-)
-cmd.add2(
-    "tts",
-    main_tts,
-    less_logging=False,
-    help="Synthesize an audio recording using text-to-speech (TTS) and add it to my Anki deck.",
-)
+
+anki_cmd = command.Group(help="Commands for interacting with my Anki deck.")
+cmd.add("anki", anki_cmd)
+anki_cmd.add2("question", main_anki_question, less_logging=False)
+anki_cmd.add2("word", main_anki_word, less_logging=False)
+
+games_cmd = command.Group(help="Commands for playing language-learning games.")
+cmd.add("games", games_cmd)
+games_cmd.add2("dui-bu-dui", main_games_dui_bu_dui)
+
+test_cmd = command.Group(help="Test commands for development.")
+cmd.add("test", test_cmd)
+test_cmd.add2("check-word", main_test_check_word)
 
 if __name__ == "__main__":
     command.dispatch(cmd)

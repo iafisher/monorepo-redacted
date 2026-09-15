@@ -8,7 +8,12 @@ from iafisher.prelude import *
 
 
 def replace_file(p: PathLike, contents: Union[str, bytes]) -> None:
-    old_stat = os.stat(p)
+    try:
+        old_stat = os.stat(p)
+    except FileNotFoundError:
+        # The file to be replaced may not exist yet.
+        old_stat = None
+
     tmppath = _tmppath_for(p)
     if isinstance(contents, str):
         with open(tmppath, "w") as f:
@@ -21,7 +26,8 @@ def replace_file(p: PathLike, contents: Union[str, bytes]) -> None:
             f.flush()
             os.fsync(f.fileno())
 
-    os.chmod(tmppath, stat.S_IMODE(old_stat.st_mode))
+    if old_stat is not None:
+        os.chmod(tmppath, stat.S_IMODE(old_stat.st_mode))
 
     os.rename(tmppath, p)
     dir_fd = os.open(tmppath.parent, os.O_DIRECTORY)

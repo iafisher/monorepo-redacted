@@ -24,13 +24,6 @@ export interface StartResponse {
   conversationId: number;
 }
 
-export interface VoteRequest {
-  messageId: number;
-  vote: string;
-}
-
-export interface VoteResponse {}
-
 export interface PromptRequest {
   conversationId: number;
   message: string;

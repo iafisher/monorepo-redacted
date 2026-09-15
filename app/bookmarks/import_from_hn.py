@@ -67,7 +67,7 @@ Assistant:
 
 def main(
     *,
-    model: Annotated[str, llm.cli.model_flag_extra()] = llm.ANY_FAST_MODEL,
+    model: Annotated[str, command.Extra(help="LLM model to use")] = llm.ANY_FAST_MODEL,
     story_limit: Annotated[
         int, command.Extra(help="limit the number of stories to query")
     ] = 20,

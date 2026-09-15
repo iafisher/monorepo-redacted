@@ -270,6 +270,18 @@ Example(x=10,
              'x': 10})""",
         )
 
+    def test_deserialize_strdict(self):
+        @dataclass
+        class Example(kgjson.Base):
+            x: StrDict
+
+        d = {"x": {"y": "z"}}
+        example = Example.deserialize(d)
+        self.assertExpectedInline(
+            pprint.pformat(example),
+            """Test.test_deserialize_strdict.<locals>.Example(x={'y': 'z'})""",
+        )
+
     def test_literal_annotation(self):
         @dataclass
         class Example(kgjson.Base):

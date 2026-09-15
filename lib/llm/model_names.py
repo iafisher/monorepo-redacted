@@ -24,10 +24,12 @@ class GptModel(StrEnum):
 
 
 class ClaudeModel(StrEnum):
+    # https://platform.claude.com/docs/en/models/overview
     HAIKU_4_5 = "claude-haiku-4-5"
     OPUS_4_5 = "claude-opus-4-5"
     OPUS_4_6 = "claude-opus-4-6"
     OPUS_4_8 = "claude-opus-4-8"
+    OPUS_5 = "claude-opus-5"
     SONNET_4_5 = "claude-sonnet-4-5"
     SONNET_4_6 = "claude-sonnet-4-6"
     SONNET_5 = "claude-sonnet-5"
@@ -42,6 +44,7 @@ class ClaudeModel(StrEnum):
 
 class GeminiModel(StrEnum):
     GEMINI_2_5_FLASH = "gemini-2.5-flash"
+    GEMINI_3_8_FLASH = "gemini-3.8-flash"
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_3_PRO = "gemini-3.1-pro-preview"
     GEMINI_MOCK_WEB_SEARCH = "gemini-mock-web-search"

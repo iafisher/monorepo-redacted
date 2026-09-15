@@ -440,6 +440,12 @@ def prepare_env(job: Job) -> Dict[str, str]:
         "HOME": os.environ["HOME"],
         "PATH": os.environ["PATH"] + ":" + extra_path,
         "PYTHONPATH": pythonpath,
+        # `stdout` and `stderr` are opened as files, which are buffered by default.
+        # This can cause unexpected reordering compared to when `stdout` and `stderr`
+        # are opened to terminal devices.
+        #
+        # https://docs.python.org/3/using/cmdline.html#cmdoption-u
+        "PYTHONUNBUFFERED": "1",
         "KG_DIR": os.environ["KG_DIR"],
     }
 
