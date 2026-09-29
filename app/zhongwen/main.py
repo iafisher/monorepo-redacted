@@ -13,7 +13,9 @@ from lib import command
 MEDIA_DIRECTORY = pathlib.Path.home() / "Documents" / "AnkiMedia"
 
 
-def main_anki_question(question: str) -> None:
+def main_anki_question(
+    question: Annotated[str, command.Extra(help="question in English")]
+) -> None:
     llm_question_note = llmgen.generate_question_note(question)
 
     today = timehelper.today()
@@ -64,14 +66,17 @@ def main_anki_word(
     tts.save_mp3(llm_word_note.sentence1_hanzi, sentence1_audio)
     sentence2_audio = d / "sentence2.mp3"
     tts.save_mp3(llm_word_note.sentence2_hanzi, sentence2_audio)
-    sentence3_audio = d / "sentence3.mp3"
-    tts.save_mp3(llm_word_note.sentence3_hanzi, sentence3_audio)
+    question1_audio = d / "question1.mp3"
+    tts.save_mp3(llm_word_note.question1_hanzi, question1_audio)
+    answer1_audio = d / "answer1.mp3"
+    tts.save_mp3(llm_word_note.answer1_hanzi, answer1_audio)
 
     note = ankiconnect.AnkiWordNote(
         word_audio=word_audio,
         sentence1_audio=sentence1_audio,
         sentence2_audio=sentence2_audio,
-        sentence3_audio=sentence3_audio,
+        question1_audio=question1_audio,
+        answer1_audio=answer1_audio,
         pinyin=pinyin,
         hanzi=llm_word_note.hanzi,
         translation=translation,
@@ -81,9 +86,12 @@ def main_anki_word(
         sentence2_pinyin=llm_word_note.sentence2_pinyin,
         sentence2_hanzi=llm_word_note.sentence2_hanzi,
         sentence2_translation=llm_word_note.sentence2_translation,
-        sentence3_pinyin=llm_word_note.sentence3_pinyin,
-        sentence3_hanzi=llm_word_note.sentence3_hanzi,
-        sentence3_translation=llm_word_note.sentence3_translation,
+        question1_pinyin=llm_word_note.question1_pinyin,
+        question1_hanzi=llm_word_note.question1_hanzi,
+        question1_translation=llm_word_note.question1_translation,
+        answer1_pinyin=llm_word_note.answer1_pinyin,
+        answer1_hanzi=llm_word_note.answer1_hanzi,
+        answer1_translation=llm_word_note.answer1_translation,
     )
     ankiconnect.upload_note(note)
 
@@ -96,8 +104,11 @@ def main_anki_word(
     print(f"{note.sentence2_hanzi} ({note.sentence2_pinyin})")
     print(note.sentence2_translation)
     print()
-    print(f"{note.sentence3_hanzi} ({note.sentence3_pinyin})")
-    print(note.sentence3_translation)
+    print(f"{note.question1_hanzi} ({note.question1_pinyin})")
+    print(note.question1_translation)
+    print()
+    print(f"{note.answer1_hanzi} ({note.answer1_pinyin})")
+    print(note.answer1_translation)
 
 
 """
@@ -144,8 +155,18 @@ cmd = command.Group()
 
 anki_cmd = command.Group(help="Commands for interacting with my Anki deck.")
 cmd.add("anki", anki_cmd)
-anki_cmd.add2("question", main_anki_question, less_logging=False)
-anki_cmd.add2("word", main_anki_word, less_logging=False)
+anki_cmd.add2(
+    "question",
+    main_anki_question,
+    less_logging=False,
+    help="Create an Anki note from an English question.",
+)
+anki_cmd.add2(
+    "word",
+    main_anki_word,
+    less_logging=False,
+    help="Create an Anki note for a word and example sentences.",
+)
 
 games_cmd = command.Group(help="Commands for playing language-learning games.")
 cmd.add("games", games_cmd)

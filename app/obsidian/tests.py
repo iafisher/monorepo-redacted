@@ -1,12 +1,16 @@
 import re
 import tempfile
+from pathlib import Path
 
 from iafisher.prelude import *
 from lib import command
 from lib.testing import *
 
 from . import verify_links
+from .create_journal import create_journal
 from .main import cmd
+from .notes import create_note, format_base_filename
+from .sweep import main as main_sweep
 from .tidy import TopicLink, TopicPage, TopicPageSection
 
 TOPIC_PAGE = """\
@@ -105,7 +109,7 @@ class Test(Base):
 
     def test_verify_links(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            tmpdir = pathlib.Path(tmpdir)
+            tmpdir = Path(tmpdir)
             (tmpdir / "live" / "subdir").mkdir(parents=True)
             (tmpdir / "archive" / "2026" / "09").mkdir(parents=True)
 
@@ -144,144 +148,146 @@ FAIL: live/subdir/fail-not-link.md (inode mismatch: <redacted> != <redacted> arc
 """,
             )
 
-    def test_help_text(self):
-        self.assertExpectedInline(
-            command.get_help_text_recursive(cmd, program="obsidian"),
-            """\
-Usage: obsidian SUBCMD
+    def test_sweep(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
 
-  Umbrella command for managing Obsidian.
+            today = dt.date(2026, 8, 1)
 
-Subcommands:
+            def days_ago(n: int) -> dt.date:
+                return today - dt.timedelta(days=n)
 
-  notes           . Work with Obsidian notes.
-  plugins         . Manage Obsidian plugins.
-  snapshot        . Snapshot an Obsidian vault with Git.
-  tidy            . Tidy up the vault.
-  verify-links    . Verify that files under live/ are hard links to archive/.
+            create_test_note(tmpdir, "to-be-swept", days_ago(15))
+            create_test_note(tmpdir, "not-yet-swept", days_ago(14))
 
-
-------------
-
-Usage: obsidian notes SUBCMD
-
-  Work with Obsidian notes.
-
-Subcommands:
-
-  create    . Create a new note.
-  rename    . Rename a note and update all links.
-
-
-------------
-
-Usage: obsidian notes create ...
-
-  Create a new note.
-
-Arguments:
-
-  -title ARG                  . the title of the Markdown file (also used to infer file name, e.g., 'Some thoughts' results in '$DATE-some-thoughts.md')
-  [-filename-override ARG]    . override -title for inferring file name (should not include date)
-  [-preview]                  . print preview of file to be created instead of actually creating it
-  [-vault ARG]                . (default: ~/Obsidian/main)
-
-
-------------
-
-Usage: obsidian notes rename ...
-
-  Rename a note and update all links.
-
-Arguments:
-
-  -from- ARG
-  -to ARG
-  [-vault ARG]    . (default: ~/Obsidian/main)
-
-
-------------
-
-Usage: obsidian plugins SUBCMD
-
-  Manage Obsidian plugins.
-
-Subcommands:
-
-  install      . Install a local plugin.
-  list         . List installed plugins.
-  uninstall    . Uninstall a local plugin.
-
-
-------------
-
-Usage: obsidian plugins install ...
-
-  Install a local plugin.
-
-Arguments:
-
-  path
-  [-dry-run]
-  [-vault ARG]    . (default: ~/Obsidian/main)
-
-
-------------
-
-Usage: obsidian plugins list ...
-
-  List installed plugins.
-
-Arguments:
-
- [-local]        . only list local plugins
- [-vault ARG]    . (default: ~/Obsidian/main)
-
-
-------------
-
-Usage: obsidian plugins uninstall ...
-
-  Uninstall a local plugin.
-
-Arguments:
-
-  name
-  [-vault ARG]    . (default: ~/Obsidian/main)
-
-
-------------
-
-Usage: obsidian snapshot ...
-
-  Snapshot an Obsidian vault with Git.
-
-Arguments:
-
-  vaults
-  [-dry-run]    . Don't actually make the commit.
-  [-no-push]    . Don't push to the remote.
-
-
-------------
-
-Usage: obsidian tidy ...
-
-  Tidy up the vault.
-
-Arguments:
-
- [-write]
-
-
-------------
-
-Usage: obsidian verify-links ...
-
-  Verify that files under live/ are hard links to archive/.
-
-Arguments:
-
- [-vault ARG]    . (default: ~/Obsidian/main)
+            stdout, stderr = self.capture_output(
+                lambda: main_sweep(vault=tmpdir, dry_run=True, date=today)
+            )
+            self.assertExpectedInline(stderr, """""")
+            self.assertExpectedInline(
+                stdout,
+                """\
+live/to-be-archived/2026-07-17-to-be-swept.md
 """,
+            )
+
+            # Dry run, no files deleted yet
+            d = tmpdir / "live" / "to-be-archived"
+            self.assertExpectedInline(
+                repr(os.listdir(d)),
+                """['2026-07-17-to-be-swept.md', '2026-07-18-not-yet-swept.md']""",
+            )
+
+            main_sweep(vault=tmpdir, dry_run=False, date=today)
+
+            self.assertExpectedInline(
+                repr(os.listdir(d)),
+                """['2026-07-18-not-yet-swept.md']""",
+            )
+
+            # Archive path missing
+            archive_path, _ = create_test_note(tmpdir, "broken-1", days_ago(15))
+            archive_path.unlink()
+
+            # Not a hard link
+            _, live_path = create_test_note(tmpdir, "broken-2", days_ago(15))
+            tmp_path = tmpdir / "tmp"
+            tmp_path.write_text(live_path.read_text())
+            # This replaces the live path with a new inode, no longer a hard link to the archive path.
+            tmp_path.rename(live_path)
+
+            stdout, stderr = self.capture_output(
+                lambda: main_sweep(vault=tmpdir, dry_run=True, date=today)
+            )
+            self.assertExpectedInline(
+                stdout,
+                """""",
+            )
+            self.assertExpectedInline(
+                stderr,
+                """\
+archive path archive/2026/07/2026-07-17-broken-1.md does not exist for live/to-be-archived/2026-07-17-broken-1.md
+live/to-be-archived/2026-07-17-broken-2.md is not a hard link to archive path archive/2026/07/2026-07-17-broken-2.md
+""",
+            )
+
+    def test_create_journal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+
+            def replace_carets(s: str) -> str:
+                # expecttest doesn't work with non-ASCII-printable characters
+                return s.replace("❮", "<").replace("❯", ">")
+
+            jul1 = dt.date(2026, 7, 2)
+            jul_archive_path = create_journal(tmpdir, today=jul1)
+            assert jul_archive_path is not None
+            self.assertEqual(
+                jul_archive_path.relative_to(tmpdir).as_posix(),
+                "archive/2026/07/2026-07-01-journal.md",
+            )
+            live_path = tmpdir / "live" / "journal.md"
+            self.assertTrue(live_path.exists())
+            self.assertEqual(live_path.stat().st_ino, jul_archive_path.stat().st_ino)
+            self.assertExpectedInline(
+                replace_carets(live_path.read_text()),
+                """\
+---
+date-created: "2026-07-01"
+archive-path: "archive/2026/07/2026-07-01-journal.md"
+created-by: "human:iafisher"
+---
+# July 2026
+< [[2026-06-01-journal|June]] | July | [[2026-08-01-journal|August]] >
+""",
+            )
+
+            # Shouldn't overwrite existing path.
+            archive_path_again = create_journal(tmpdir, today=jul1)
+            self.assertIsNone(archive_path_again)
+
+            # Now it is the next month, create a new journal note.
+            aug1 = dt.date(2026, 8, 1)
+            aug_archive_path = create_journal(tmpdir, today=aug1)
+            assert aug_archive_path is not None
+            self.assertEqual(
+                aug_archive_path.relative_to(tmpdir).as_posix(),
+                "archive/2026/08/2026-08-01-journal.md",
+            )
+            self.assertEqual(live_path.stat().st_ino, aug_archive_path.stat().st_ino)
+            # Live path is replaced with August note.
+            self.assertExpectedInline(
+                replace_carets(live_path.read_text()),
+                """\
+---
+date-created: "2026-08-01"
+archive-path: "archive/2026/08/2026-08-01-journal.md"
+created-by: "human:iafisher"
+---
+# August 2026
+< [[2026-07-01-journal|July]] | August | [[2026-09-01-journal|September]] >
+""",
+            )
+            # Archive path for July is untouched.
+            self.assertExpectedInline(
+                replace_carets(jul_archive_path.read_text()),
+                """\
+---
+date-created: "2026-07-01"
+archive-path: "archive/2026/07/2026-07-01-journal.md"
+created-by: "human:iafisher"
+---
+# July 2026
+< [[2026-06-01-journal|June]] | July | [[2026-08-01-journal|August]] >
+""",
+            )
+
+    def test_help_text(self):
+        self.assertTrue(
+            len(command.get_help_text_recursive(cmd, program="obsidian")) > 0
         )
+
+
+def create_test_note(tmpdir: Path, title: str, today: dt.date) -> Tuple[Path, Path]:
+    filename = format_base_filename(title)
+    return create_note(tmpdir, filename, title=title, today=today)

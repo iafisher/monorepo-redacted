@@ -73,7 +73,8 @@ class AnkiWordNote(AnkiNote):
     word_audio: pathlib.Path
     sentence1_audio: pathlib.Path
     sentence2_audio: pathlib.Path
-    sentence3_audio: pathlib.Path
+    question1_audio: pathlib.Path
+    answer1_audio: pathlib.Path
     pinyin: str
     hanzi: str
     translation: str
@@ -83,9 +84,12 @@ class AnkiWordNote(AnkiNote):
     sentence2_pinyin: str
     sentence2_hanzi: str
     sentence2_translation: str
-    sentence3_pinyin: str
-    sentence3_hanzi: str
-    sentence3_translation: str
+    question1_pinyin: str
+    question1_hanzi: str
+    question1_translation: str
+    answer1_pinyin: str
+    answer1_hanzi: str
+    answer1_translation: str
 
     @override
     def to_params(self, deck: str) -> StrDict:
@@ -97,7 +101,8 @@ class AnkiWordNote(AnkiNote):
                 ("word_audio", self.word_audio),
                 ("sentence1_audio", self.sentence1_audio),
                 ("sentence2_audio", self.sentence2_audio),
-                ("sentence3_audio", self.sentence3_audio),
+                ("question1_audio", self.question1_audio),
+                ("answer1_audio", self.answer1_audio),
             ],
         )
 

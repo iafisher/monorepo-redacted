@@ -34,6 +34,15 @@ class Base(expecttest.TestCase):
 
         return mock_stdout.getvalue()
 
+    def capture_output(self, f: Callable[[], Any]) -> Tuple[str, str]:
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                f()
+
+        stdout = mock_stdout.getvalue()
+        stderr = mock_stderr.getvalue()
+        return stdout, stderr
+
 
 class BaseExpectStdout(Base):
     @override

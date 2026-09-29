@@ -12,6 +12,28 @@ export default class NewNotePlugin extends Plugin {
         new NewNoteModal(this.app).open();
       },
     });
+
+    this.addCommand({
+      id: "link-current-note-dialog",
+      name: "Link current note",
+      callback: async () => {
+        const file = this.app.workspace.getActiveFile();
+        if (!file) {
+          return;
+        }
+
+        const filename = basename(file.path);
+        const { error, stdout, stderr } = await asyncCommand(
+          `ln "${file.path}" "live/${filename}"`,
+          // @ts-ignore
+          { cwd: this.app.vault.adapter.basePath },
+        );
+
+        if (error) {
+          showCommandError(error, stderr);
+        }
+      },
+    });
   }
 }
 

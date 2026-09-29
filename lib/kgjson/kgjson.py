@@ -79,6 +79,11 @@ class Base:
     def serialize(
         self, *, camel_case: bool = False, indent: Optional[int] = None
     ) -> str:
+        return json.dumps(
+            self.to_dict(camel_case=camel_case), indent=indent, cls=KgJsonEncoder
+        )
+
+    def to_dict(self, *, camel_case: bool = False) -> StrDict:
         dataclass_fields: ItemsView[str, Any] = cast(
             Dict[str, Any], self.__dataclass_fields__  # type: ignore
         ).items()
@@ -96,7 +101,7 @@ class Base:
         as_dict = dataclasses.asdict(self)  # type: ignore
         if camel_case:
             as_dict = _snake_to_camel_dict(as_dict)
-        return json.dumps(as_dict, indent=indent, cls=KgJsonEncoder)
+        return as_dict
 
     def save(self, p: PathLike) -> None:
         oshelper.replace_file(p, self.serialize())

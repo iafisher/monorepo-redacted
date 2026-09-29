@@ -15,7 +15,8 @@ def _make_word_prompt(*, pinyin: str, translation: str) -> str:
 WORD_PROMPT = """\
 You create example sentences in Mandarin Chinese for a language learner.
 
-You are given a word and English translation, and you must produce three example sentences.
+You are given a word and English translation, and you must produce two example sentences
+and a question/answer exchange.
 
 If the input is valid, then the last line of your output MUST be a JSON object with the
 following fields:
@@ -27,9 +28,12 @@ following fields:
 - sentence2_pinyin: the second example sentence, in Pinyin
 - sentence2_hanzi: the second example sentence, in characters
 - sentence2_translation: the second example sentence, translated to English
-- sentence3_pinyin: the third example sentence, in Pinyin
-- sentence3_hanzi: the third example sentence, in characters
-- sentence3_translation: the third example sentence, translated to English
+- question1_pinyin: the example question, in Pinyin
+- question1_hanzi: the example question, in characters
+- question1_translation: the example question, translated to English
+- answer1_pinyin: a random answer to the example question, in Pinyin
+- answer1_hanzi: the answer in characters
+- answer1_translation: the answer translated to English
 
 If the input is invalid (incorrect pinyin or incorrect translation), then the last line
 of your output MUST be a JSON object with a single field, `error`, containing a one-sentence
@@ -41,9 +45,11 @@ Do not give an error for pinyin that is ambiguous if the translation correctly i
 one of the possible characters. For example, if the user supplies "qiáng 'strong'", you
 must not give an error even though 'qiáng' can also mean wall.
 
-One of the sentences should be a simple clause, while two of the sentences should
-have two clauses (e.g., "X, but Y" or "X, because Y", or "After X, Y" or "N said that X"
-or "X, even though Y", etc.). Sentences may be declarations, commands, or questions.
+One of the sentences should be a simple clause, while the other sentence should have
+two clauses (e.g., "X, but Y" or "X, because Y", or "After X, Y" or "N said that X"
+or "X, even though Y", etc.). Sentences may be declarations or commands.
+
+The example question and answer should be single clauses.
 
 Use elementary to intermediate vocabulary. Choose words that complement the target
 word, e.g., for "chī 'to eat'" include words related to food, cooking, or the
@@ -56,7 +62,7 @@ For example:
 </user>
 
 <model>
-{"hanzi": "吃", "sentence1_pinyin": "Wǒ méi chī wán yīnwèi wǒ bú è.", "sentence1_hanzi": "我没吃完因为我不饿。", "sentence1_translation": "I didn't finish eating because I wasn't hungry.", "sentence2_pinyin": "Wǒ chī píngguǒ.", "sentence2_hanzi": "我吃苹果。", "sentence2_translation": "I eat an apple.", "sentence3_pinyin": "Wǒ xiǎng chī mǐfàn, dànshì wǒ méiyǒu shíjiān.", "sentence3_hanzi": "我想吃米饭，但是我没有时间。", "sentence3_translation": "I want to eat rice, but I don't have time."}
+{"hanzi": "吃", "sentence1_pinyin": "Wǒ méi chī wán yīnwèi wǒ bú è.", "sentence1_hanzi": "我没吃完因为我不饿。", "sentence1_translation": "I didn't finish eating because I wasn't hungry.", "sentence2_pinyin": "Wǒ chī píngguǒ.", "sentence2_hanzi": "我吃苹果。", "sentence2_translation": "I eat an apple.", "question1_pinyin": "Nǐ zuótiān wǔfàn chī le shénme?", "question1_hanzi": "你昨天午饭吃了什么？", "question1_translation": "What did you eat for lunch yesterday?", "answer1_pinyin": "Wǒ chī le jīròu hé mǐfàn.", "answer1_hanzi": "我吃了鸡肉和米饭。", "answer1_translation": "I ate chicken and rice."}
 </model>
 
 <user>
@@ -81,9 +87,12 @@ class LLMWordNote(kgjson.Base):
     sentence2_pinyin: str
     sentence2_hanzi: str
     sentence2_translation: str
-    sentence3_pinyin: str
-    sentence3_hanzi: str
-    sentence3_translation: str
+    question1_pinyin: str
+    question1_hanzi: str
+    question1_translation: str
+    answer1_pinyin: str
+    answer1_hanzi: str
+    answer1_translation: str
 
 
 def generate_word_note(*, pinyin: str, translation: str) -> LLMWordNote:
@@ -117,6 +126,10 @@ following fields:
 - answer_pinyin: an example answer to the question, in Pinyin
 - answer_hanzi: an example answer to the question, in characters
 - answer_translation: an example answer to the question, translated to English
+
+If the input is invalid (e.g., question given in Chinese instead of English), then the last
+line of your output MUST be a JSON object with a single field, `error`, containing a one-
+sentence explanation of the error.
 
 Translate questions idiomatically, not word-for-word. Use elementary to intermediate
 vocabulary.

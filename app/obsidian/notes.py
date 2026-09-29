@@ -1,4 +1,6 @@
 import unicodedata
+from pathlib import Path
+from typing import NewType
 
 from iafisher import timehelper
 from iafisher.prelude import *
@@ -21,54 +23,100 @@ def main_create(
         command.Extra(
             help="override -title for inferring file name (should not include date)"
         ),
-    ],
-    vault: pathlib.Path = obsidian.Vault.main().path(),
+    ] = None,
+    vault: Path = obsidian.Vault.main().path(),
     preview: Annotated[
         bool,
         command.Extra(
             help="print preview of file to be created instead of actually creating it"
         ),
-    ],
+    ] = False,
+    date: Annotated[Optional[dt.date], command.Extra(help="override today's date")],
 ) -> None:
-    today = dt.date.today()
-    filename = title_to_filename(opt_or(filename_override, title), today=today)
+    today = opt_or_thunk(date, timehelper.today)
+    filename = format_base_filename(opt_or(filename_override, title))
+    if preview:
+        archive_path = format_archive_path(vault, filename, today=today)
+        live_path = format_live_path(vault, archive_path)
+        text = format_note_text(
+            title, today=today, archive_path=archive_path.relative_to(vault)
+        )
+        print("Archive path:", archive_path.relative_to(vault))
+        print("Live path:   ", live_path.relative_to(vault))
+        print()
+        print(text)
+    else:
+        _, live_path = create_note(vault, filename=filename, title=title, today=today)
+        print(live_path.relative_to(vault))
 
-    def rel(p: pathlib.Path) -> pathlib.Path:
-        return p.relative_to(vault)
 
-    today = timehelper.today()
-    archive_path = vault / "archive" / f"{today.year}" / f"{today.month:0>2}" / filename
-    live_path = vault / "live" / "to-be-archived" / filename
+BaseFilename = NewType("BaseFilename", str)
+
+
+def create_note(
+    vault: Path,
+    filename: BaseFilename,
+    *,
+    title: str,
+    today: dt.date,
+    overwrite_live_path: bool = False,
+    live_path_override: Optional[Path] = None,
+    extra_content: str = "",
+) -> Tuple[Path, Path]:
+    archive_path = format_archive_path(vault, filename, today=today)
+    live_path = opt_or_thunk(
+        live_path_override, lambda: format_live_path(vault, archive_path)
+    )
 
     if archive_path.exists():
         raise KgError(
             "A file with this name already exists.", archive_path=archive_path
         )
 
-    text = f"""\
+    if live_path.exists():
+        if overwrite_live_path:
+            live_path.unlink()
+        else:
+            raise KgError("The live path already exists.", live_path=live_path)
+
+    text = format_note_text(
+        title,
+        today=today,
+        archive_path=archive_path.relative_to(vault),
+        extra_content=extra_content,
+    )
+
+    archive_path.parent.mkdir(parents=True, exist_ok=True)
+    archive_path.write_text(text)
+    live_path.parent.mkdir(parents=True, exist_ok=True)
+    live_path.hardlink_to(archive_path)
+    return archive_path, live_path
+
+
+def format_note_text(
+    title: str,
+    *,
+    today: dt.date,
+    archive_path: Path,
+    created_by: str = "human:iafisher",
+    extra_content: str = "",
+) -> str:
+    return (
+        f"""\
 ---
 date-created: "{today}"
-archive-path: "{rel(archive_path)}"
-created-by: "human:iafisher"
+archive-path: "{archive_path}"
+created-by: "{created_by}"
 ---
-
 # {title}
-"""
-
-    if preview:
-        print("Archive path:", rel(archive_path))
-        print("Live path:   ", rel(live_path))
-        print()
-        print(text)
-    else:
-        archive_path.parent.mkdir(parents=True, exist_ok=True)
-        archive_path.write_text(text)
-        live_path.hardlink_to(archive_path)
-        print(rel(live_path))
+{extra_content}
+""".rstrip()
+        + "\n"
+    )
 
 
 def main_rename(
-    *, from_: str, to: str, vault: pathlib.Path = obsidian.Vault.main().path()
+    *, from_: str, to: str, vault: Path = obsidian.Vault.main().path()
 ) -> None:
     # TODO(2026-09): After vault reorganization, I probably don't need this function anymore.
     destination = to
@@ -92,7 +140,7 @@ def main_rename(
     )
 
 
-def title_to_filename(t: str, *, today: dt.date) -> str:
+def format_base_filename(t: str) -> BaseFilename:
     t = t.lower()
     t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode("utf-8")
     t = remove_suffix(t, suffix=".md")
@@ -100,9 +148,16 @@ def title_to_filename(t: str, *, today: dt.date) -> str:
     t = re.sub(r":\s*", "-", t)
     t = re.sub(r"\s*-\s*", "-", t)
     t = re.sub(r"\s+", "-", t)
+    return BaseFilename(t)
 
-    yyyy_mm_dd = f"{today.year}-{today.month:0>2}-{today.day:0>2}"
-    return f"{yyyy_mm_dd}-{t}.md"
+
+def format_live_path(vault: Path, archive_path: Path) -> Path:
+    return vault / "live" / "to-be-archived" / archive_path.name
+
+
+def format_archive_path(vault: Path, base: BaseFilename, *, today: dt.date) -> Path:
+    dated_filename = f"{today.year}-{today.month:0>2}-{today.day:0>2}-{base}.md"
+    return vault / "archive" / f"{today.year}" / f"{today.month:0>2}" / dated_filename
 
 
 cmd = command.Group(help="Work with Obsidian notes.")
