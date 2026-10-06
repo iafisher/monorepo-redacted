@@ -107,32 +107,6 @@ class AnkiWordNote(AnkiNote):
         )
 
 
-@dataclass
-class AnkiQuestionNote(AnkiNote):
-    # Front: audio of question, plus English answer
-
-    question_audio: pathlib.Path
-    question_pinyin: str
-    question_hanzi: str
-    question_translation: str
-    answer_audio: pathlib.Path
-    answer_pinyin: str
-    answer_hanzi: str
-    answer_translation: str
-
-    @override
-    def to_params(self, deck: str) -> StrDict:
-        return _add_note_params(
-            deck,
-            QUESTION_NOTE_TYPE,
-            _replace_paths(dataclasses.asdict(self)),
-            [
-                ("question_audio", self.question_audio),
-                ("answer_audio", self.answer_audio),
-            ],
-        )
-
-
 def _add_note_params(
     deck: str, model: str, fields: StrDict, audio: List[Tuple[str, pathlib.Path]]
 ) -> StrDict:

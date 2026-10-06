@@ -1,6 +1,10 @@
 import * as kgrpc from "../common/kgrpc";
 import * as rpc from "./rpc";
 
+export async function fetchConfig(): Promise<rpc.FetchConfigResponse> {
+  return await kgrpc.get("/api/config");
+}
+
 export async function fetchConversationById(
   conversationId: number,
 ): Promise<rpc.ConversationResponse> {
@@ -13,8 +17,9 @@ export async function fetchAllConversations(): Promise<rpc.FetchConversationsRes
 
 export async function startConversation(
   model: string,
+  template: string,
 ): Promise<rpc.StartResponse> {
-  const request: rpc.StartRequest = { model };
+  const request: rpc.StartRequest = { model, template };
   return await kgrpc.post("/api/start", request);
 }
 

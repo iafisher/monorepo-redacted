@@ -11,6 +11,7 @@ export interface Message {
 
 export interface ConversationResponse {
   model: string;
+  template: string;
   messages: Message[];
   tokenCount: number;
   llmConversationId: number;
@@ -18,6 +19,7 @@ export interface ConversationResponse {
 
 export interface StartRequest {
   model: string | null;
+  template: string | null;
 }
 
 export interface StartResponse {
@@ -35,6 +37,7 @@ export interface FetchConversationsResponseItem {
   conversationId: number;
   title: string;
   model: string;
+  template: string;
   timeCreated: string;
   messageCount: number;
 }
@@ -46,4 +49,18 @@ export interface FetchConversationsResponse {
 export interface TranscriptResponse {
   raw: any[];
   universal: any[];
+}
+
+export interface Model {
+  name: string;
+}
+
+export interface Template {
+  name: string;
+}
+
+export interface FetchConfigResponse {
+  models: Model[];
+  templates: Template[];
+  defaultModel: string;
 }

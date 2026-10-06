@@ -12,9 +12,10 @@ from app.llm2.commanddef import CommandDef
 from app.llm2.code_alone import get_request_dir, Request as CodeAloneRequest
 from app.llm2.redacted import *
 from app.llmweb import db_models, rpc
+from app.llmweb.templates import Template
 from iafisher import timehelper
 from iafisher.prelude import *  # noqa: F401
-from lib import kgjson, llm, pgdb, webserver
+from lib import kgenv, kgjson, llm, pgdb, webserver
 
 
 app = webserver.make_app("llmweb", file=__file__)
@@ -55,6 +56,28 @@ def frontend_page(*args: Any, **kwargs: Any):
     return render_template_string(TEMPLATE)
 
 
+DEFAULT_MODEL = llm.ClaudeModel.SONNET_5
+
+
+@app.route("/api/config", methods=["GET"])
+def api_config():
+    models = [
+        rpc.Model(name=name)
+        for name, model in llm.model_info.MODEL_TO_INFO.items()
+        if not model.is_mock or kgenv.get_mode() != "prod"
+    ]
+    models.sort(key=lambda m: m.name)
+
+    with pgdb.connect() as db:
+        templates = [rpc.Template(t.template_name) for t in Template.fetch_all(db)]
+
+    return webserver.json_response2(
+        rpc.FetchConfigResponse(
+            models=models, templates=templates, default_model=DEFAULT_MODEL
+        )
+    )
+
+
 @app.route("/api/conversations", methods=["GET"])
 def api_conversations():
     with pgdb.connect() as db:
@@ -71,7 +94,7 @@ def db_fetch_conversations(
     return db.fetch_all(
         pgdb.SQL(
             """
-            SELECT w.conversation_id, w.title, l.model, w.time_created, COUNT(m.message_id) AS message_count
+            SELECT w.conversation_id, w.title, l.model, w.template, w.time_created, COUNT(m.message_id) AS message_count
             FROM llmweb_conversations w
             LEFT JOIN llm_v3_conversations l
             ON w.llm_conversation_id = l.conversation_id
@@ -99,17 +122,23 @@ def api_conversation(conversation_id: int):
             t=pgdb.t(rpc.Message),
         )
 
-        model, raw_messages, llm_conversation_id = db.fetch_one(
+        llm_conversation_id, template_name = db.fetch_one(
             """
-            SELECT model, messages, conversation_id
-            FROM llm_v3_conversations
-            WHERE conversation_id = (
-                SELECT llm_conversation_id
-                FROM llmweb_conversations
-                WHERE conversation_id = %(conversation_id)s
-            )
+            SELECT llm_conversation_id, template
+            FROM llmweb_conversations
+            WHERE conversation_id = %(conversation_id)s
             """,
             dict(conversation_id=conversation_id),
+            t=pgdb.tuple_row,
+        )
+
+        model, raw_messages = db.fetch_one(
+            """
+            SELECT model, messages
+            FROM llm_v3_conversations
+            WHERE conversation_id = %(conversation_id)s
+            """,
+            dict(conversation_id=llm_conversation_id),
             t=pgdb.tuple_row,
         )
 
@@ -121,6 +150,7 @@ def api_conversation(conversation_id: int):
 
     response = rpc.ConversationResponse(
         model=model,
+        template=template_name,
         messages=messages,
         token_count=token_count,
         llm_conversation_id=llm_conversation_id,
@@ -131,24 +161,33 @@ def api_conversation(conversation_id: int):
 @app.route("/api/start", methods=["POST"])
 def api_start():
     rpc_request = webserver.request(rpc.StartRequest)
-    model_name = rpc_request.model or llm.ClaudeModel.SONNET_LATEST
-
-    try:
-        model_name = llm.canonicalize_model_name(model_name)
-    except KgError:
-        return webserver.json_response_error(f"invalid model: {model_name}")
+    template_name = rpc_request.template
 
     with pgdb.connect() as db:
+        if template_name:
+            template = Template.fetch_one(db, template_name)
+            system_prompt = template.system_prompt
+            default_model = template.default_model or DEFAULT_MODEL
+        else:
+            system_prompt = SYSTEM_PROMPT
+            default_model = DEFAULT_MODEL
+
+        model_name = rpc_request.model or default_model
+        try:
+            model_name = llm.canonicalize_model_name(model_name)
+        except KgError:
+            return webserver.json_response_error(f"invalid model: {model_name}")
+
         now = timehelper.now()
         llm_conversation_id = llm.storage.create_conversation(
             db,
             model=model_name,
             app_name="llmweb",
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             messages=[],
             now=now,
         )
-        conversation = insert_conversation(db, llm_conversation_id)
+        conversation = insert_conversation(db, llm_conversation_id, template_name or "")
 
     response = rpc.StartResponse(conversation_id=conversation.conversation_id)
     return webserver.json_response2(response)
@@ -580,18 +619,22 @@ def insert_message(
 
 
 def insert_conversation(
-    db: pgdb.Connection, llm_conversation_id: int
+    db: pgdb.Connection, llm_conversation_id: int, template_name: str
 ) -> db_models.Conversation:
     now = timehelper.now()
     return db.fetch_one(
         pgdb.SQL(
             """
-            INSERT INTO llmweb_conversations(llm_conversation_id, title, time_created)
-            VALUES (%(llm_conversation_id)s, '', %(now)s)
+            INSERT INTO llmweb_conversations(llm_conversation_id, title, template, time_created)
+            VALUES (%(llm_conversation_id)s, '', %(template_name)s, %(now)s)
             RETURNING {star}
             """
         ).format(star=db_models.Conversation.T.star),
-        dict(llm_conversation_id=llm_conversation_id, now=now),
+        dict(
+            llm_conversation_id=llm_conversation_id,
+            template_name=template_name,
+            now=now,
+        ),
         t=pgdb.t(db_models.Conversation),
     )
 

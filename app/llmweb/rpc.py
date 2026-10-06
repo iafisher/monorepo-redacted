@@ -17,6 +17,7 @@ class Message(kgjson.Base):
 @dataclass
 class ConversationResponse(kgjson.Base):
     model: str
+    template: str
     messages: List[Message]
     token_count: int
     llm_conversation_id: int
@@ -25,6 +26,7 @@ class ConversationResponse(kgjson.Base):
 @dataclass
 class StartRequest(kgjson.Base):
     model: Optional[str]
+    template: Optional[str]
 
 
 @dataclass
@@ -45,6 +47,7 @@ class FetchConversationsResponseItem(kgjson.Base):
     conversation_id: int
     title: str
     model: str
+    template: str
     time_created: datetime.datetime
     message_count: int
 
@@ -58,3 +61,20 @@ class FetchConversationsResponse(kgjson.Base):
 class TranscriptResponse(kgjson.Base):
     raw: List[Any]
     universal: List[Any]
+
+
+@dataclass
+class Model(kgjson.Base):
+    name: str
+
+
+@dataclass
+class Template(kgjson.Base):
+    name: str
+
+
+@dataclass
+class FetchConfigResponse(kgjson.Base):
+    models: List[Model]
+    templates: List[Template]
+    default_model: str

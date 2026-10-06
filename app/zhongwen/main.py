@@ -13,40 +13,6 @@ from lib import command
 MEDIA_DIRECTORY = pathlib.Path.home() / "Documents" / "AnkiMedia"
 
 
-def main_anki_question(
-    question: Annotated[str, command.Extra(help="question in English")]
-) -> None:
-    llm_question_note = llmgen.generate_question_note(question)
-
-    today = timehelper.today()
-    hsh = sha256(question)[:8]
-    d = MEDIA_DIRECTORY / f"question-{today}-{sha256(hsh)}"
-    d.mkdir()
-    LOG.info("saving MP3 files to %s", d)
-
-    question_audio = d / "question.mp3"
-    tts.save_mp3(llm_question_note.question_hanzi, question_audio)
-    answer_audio = d / "answer.mp3"
-    tts.save_mp3(llm_question_note.answer_hanzi, answer_audio)
-
-    note = ankiconnect.AnkiQuestionNote(
-        question_audio=question_audio,
-        question_pinyin=llm_question_note.question_pinyin,
-        question_hanzi=llm_question_note.question_hanzi,
-        question_translation=question,
-        answer_audio=answer_audio,
-        answer_pinyin=llm_question_note.answer_pinyin,
-        answer_hanzi=llm_question_note.answer_hanzi,
-        answer_translation=llm_question_note.answer_translation,
-    )
-    ankiconnect.upload_note(note)
-
-    print()
-    print(f"{note.question_hanzi} ({note.question_pinyin}) – '{question}'")
-    print()
-    print(f"{note.answer_hanzi} ({note.answer_pinyin} - '{note.answer_translation}')")
-
-
 def main_anki_word(
     *, pinyin: str, translation: str, skip_duplicate_check: bool
 ) -> None:
@@ -130,6 +96,10 @@ def main_games_dui_bu_dui(*, n: int = 8) -> None:
     print("Copy-paste the above into Live Chat mode to play the game 'Duì bu duì'.")
 
 
+def main_games_translate_text(*, topic: str) -> None:
+    print(llmgen.generate_text(topic))
+
+
 def main_test_check_word(pinyin: str) -> None:
     _ensure_not_already_in_deck(pinyin)
     print("OK.")
@@ -156,12 +126,6 @@ cmd = command.Group()
 anki_cmd = command.Group(help="Commands for interacting with my Anki deck.")
 cmd.add("anki", anki_cmd)
 anki_cmd.add2(
-    "question",
-    main_anki_question,
-    less_logging=False,
-    help="Create an Anki note from an English question.",
-)
-anki_cmd.add2(
     "word",
     main_anki_word,
     less_logging=False,
@@ -171,6 +135,11 @@ anki_cmd.add2(
 games_cmd = command.Group(help="Commands for playing language-learning games.")
 cmd.add("games", games_cmd)
 games_cmd.add2("dui-bu-dui", main_games_dui_bu_dui)
+games_cmd.add2(
+    "translate-text",
+    main_games_translate_text,
+    help="Generate a text to translate to Chinese.",
+)
 
 test_cmd = command.Group(help="Test commands for development.")
 cmd.add("test", test_cmd)

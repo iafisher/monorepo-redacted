@@ -3,11 +3,9 @@ import MarkdownIt from "markdown-it";
 
 import Controller from "../common/controller";
 import HeaderView from "../common/header";
-import { formatTimestamp, isInDev } from "../common/utils";
+import { formatTimestamp } from "../common/utils";
 import * as api from "./api";
 import * as rpc from "./rpc";
-
-const DEFAULT_MODEL = "claude-sonnet";
 
 const md = new MarkdownIt();
 
@@ -24,9 +22,11 @@ interface ChatState {
   loadingStatus: string | null;
   inputText: string;
   selectedModel: string;
+  selectedTemplate: string;
   inferenceMode: string;
   webSearchEnabled: boolean;
   tokenCount: number | null;
+  config: rpc.FetchConfigResponse;
 }
 
 async function loadConversation(state: ChatState, conversationId: number) {
@@ -46,10 +46,20 @@ async function loadConversation(state: ChatState, conversationId: number) {
   }
   state.messages = data.messages;
   state.selectedModel = data.model;
+  state.selectedTemplate = data.template;
   state.tokenCount = data.tokenCount;
   state.llmConversationId = data.llmConversationId;
   m.redraw();
   scrollToBottom();
+}
+
+async function loadConfig(state: ChatState) {
+  try {
+    state.config = await api.fetchConfig();
+  } catch (e) {
+    state.controller.pushError(`failed to load config: ${e}`);
+    return;
+  }
 }
 
 function formatCitationsMessage(content: string): string {
@@ -100,8 +110,9 @@ async function sendMessage(state: ChatState) {
   let conversationId: number;
   if (!state.conversationId) {
     try {
-      conversationId = (await api.startConversation(state.selectedModel))
-        .conversationId;
+      conversationId = (
+        await api.startConversation(state.selectedModel, state.selectedTemplate)
+      ).conversationId;
     } catch (e) {
       onError(`failed to start conversation: ${e}`);
       return;
@@ -300,56 +311,87 @@ class MessageView {
   }
 }
 
+interface Option {
+  name: string;
+  value: string;
+}
+
+class SelectView {
+  view(
+    vnode: m.Vnode<{
+      label: string;
+      value: string;
+      options: Option[];
+      oninput: (value: string) => void;
+      disabled: boolean;
+    }>,
+  ) {
+    const { label, value, options, oninput, disabled } = vnode.attrs;
+    const setValue = (vnode: m.VnodeDOM) => {
+      (vnode.dom as HTMLSelectElement).value = value;
+    };
+    return m("label", [
+      label,
+      m(
+        "select",
+        {
+          value,
+          disabled,
+          oninput: (e: InputEvent) => {
+            oninput((e.target as HTMLSelectElement).value);
+          },
+          /* Setting `value` doesn't seem to work after the initial render,
+               but `oncreate` and `onupdate` fixes it.
+
+               http://llm/conversation/406 */
+          oncreate: setValue,
+          onupdate: setValue,
+        },
+        options.map((opt) => m("option", { value: opt.value }, opt.name)),
+      ),
+    ]);
+  }
+}
+
 class ModelSelectorView {
   view(vnode: m.Vnode<{ state: ChatState }>) {
     const state = vnode.attrs.state;
     const hasConversation = state.conversationId !== null;
-    const models = [
-      { value: "claude-sonnet", label: "Sonnet" },
-      { value: "claude-opus", label: "Opus" },
-      { value: "claude-haiku", label: "Haiku" },
-      { value: "terra", label: "GPT 5.6 Terra" },
-      { value: "gemini-2.5-pro", label: "Gemini 2.5" },
-    ];
-
-    if (isInDev()) {
-      models.push({
-        value: "claude-mock-local-tool-use",
-        label: "Mock local tool use (Claude)",
-      });
-      models.push({
-        value: "claude-mock-web-search",
-        label: "Mock web search (Claude)",
-      });
-      models.push({
-        value: "gemini-mock-web-search",
-        label: "Mock web search (Gemini)",
-      });
-      models.push({
-        value: "gpt-mock-web-search",
-        label: "Mock web search (GPT)",
-      });
-    }
-
     const inferenceModeOptions = ["normal", "fast", "slow", "summary"];
+    const modelOptions = state.config.models.map((model) => ({
+      name: model.name,
+      value: model.name,
+    }));
+    const templateOptions = state.config.templates.map((template) => ({
+      name: template.name,
+      value: template.name,
+    }));
+    templateOptions.unshift({ name: "", value: "" });
+    const onModelInput = (value: string) => {
+      state.selectedModel = value;
+    };
+    const onTemplateInput = (value: string) => {
+      /* TODO(2026-09): Templates carry a default model which should be set when template
+         is selected. */
+      state.selectedTemplate = value;
+    };
     return m(".model-selector", [
-      m("label", [
-        "Model: ",
-        hasConversation
-          ? state.selectedModel
-          : m(
-              "select",
-              {
-                value: state.selectedModel,
-                oninput: (e: InputEvent) => {
-                  state.selectedModel = (e.target as HTMLSelectElement).value;
-                },
-              },
-              models.map((model) =>
-                m("option", { value: model.value }, model.label),
-              ),
-            ),
-      ]),
+      m(SelectView, {
+        label: "Model: ",
+        value: state.selectedModel,
+        options: modelOptions,
+        oninput: onModelInput,
+        disabled: hasConversation,
+      }),
+      state.config.templates.length === 0
+        ? null
+        : m(SelectView, {
+            label: "Template: ",
+            value: state.selectedTemplate,
+            options: templateOptions,
+            oninput: onTemplateInput,
+            disabled: hasConversation,
+          }),
       m("label", [
         "Mode: ",
         m(
@@ -471,24 +513,30 @@ class ChatPage {
       messages: [],
       inputText: "",
       loadingStatus: null,
-      selectedModel: DEFAULT_MODEL,
+      selectedModel: "",
+      selectedTemplate: "",
       inferenceMode: "normal",
       webSearchEnabled: false,
       tokenCount: null,
+      config: { models: [], templates: [], defaultModel: "" },
     };
   }
 
   async oninit() {
     const idStr = m.route.param("id");
+    await loadConfig(this.state);
     if (idStr) {
       this.state.selectedModel = "";
-      loadConversation(this.state, parseInt(idStr));
+      this.state.selectedTemplate = "";
+      await loadConversation(this.state, parseInt(idStr));
     } else {
       // Reset state for new conversation
       this.state.conversationId = null;
       this.state.messages = [];
       this.state.inputText = "";
-      this.state.selectedModel = DEFAULT_MODEL;
+      this.state.selectedModel = this.state.config.defaultModel;
+      this.state.selectedTemplate = "";
+      m.redraw();
     }
   }
 

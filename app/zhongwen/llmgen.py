@@ -49,7 +49,8 @@ One of the sentences should be a simple clause, while the other sentence should 
 two clauses (e.g., "X, but Y" or "X, because Y", or "After X, Y" or "N said that X"
 or "X, even though Y", etc.). Sentences may be declarations or commands.
 
-The example question and answer should be single clauses.
+The example question and answer should be single clauses. The question should not contain
+the target word, while the answer must contain the target word.
 
 Use elementary to intermediate vocabulary. Choose words that complement the target
 word, e.g., for "chī 'to eat'" include words related to food, cooking, or the
@@ -62,7 +63,7 @@ For example:
 </user>
 
 <model>
-{"hanzi": "吃", "sentence1_pinyin": "Wǒ méi chī wán yīnwèi wǒ bú è.", "sentence1_hanzi": "我没吃完因为我不饿。", "sentence1_translation": "I didn't finish eating because I wasn't hungry.", "sentence2_pinyin": "Wǒ chī píngguǒ.", "sentence2_hanzi": "我吃苹果。", "sentence2_translation": "I eat an apple.", "question1_pinyin": "Nǐ zuótiān wǔfàn chī le shénme?", "question1_hanzi": "你昨天午饭吃了什么？", "question1_translation": "What did you eat for lunch yesterday?", "answer1_pinyin": "Wǒ chī le jīròu hé mǐfàn.", "answer1_hanzi": "我吃了鸡肉和米饭。", "answer1_translation": "I ate chicken and rice."}
+{"hanzi": "吃", "sentence1_pinyin": "Wǒ méi chī wán yīnwèi wǒ bú è.", "sentence1_hanzi": "我没吃完因为我不饿。", "sentence1_translation": "I didn't finish eating because I wasn't hungry.", "sentence2_pinyin": "Wǒ chī píngguǒ.", "sentence2_hanzi": "我吃苹果。", "sentence2_translation": "I eat an apple.", "question1_pinyin": "Nǐ wǔfàn shì shénme?", "question1_hanzi": "你午饭是什么?", "answer1_pinyin": "Wǒ chī le jīròu hé mǐfàn.", "answer1_hanzi": "我吃了鸡肉和米饭。", "answer1_translation": "I ate chicken and rice."}
 </model>
 
 <user>
@@ -108,82 +109,21 @@ def generate_word_note(*, pinyin: str, translation: str) -> LLMWordNote:
         )
         LOG.info("end:   generating word note (%s)", pinyin)
 
-        last_line_json = _parse_last_line_as_json(response)
-        return LLMWordNote.deserialize(last_line_json)
-
-
-QUESTION_PROMPT = """\
-You create example question/answer exchanges in Mandarin Chinese for a language learner.
-
-You are given a question in English, and you must translate it into Chinese and produce a
-sample answer.
-
-If the input is valid, then the last line of your output MUST be a JSON object with the
-following fields:
-
-- question_pinyin: the question translated into Chinese, in Pinyin
-- question_hanzi: the question translated into Chinese, in characters
-- answer_pinyin: an example answer to the question, in Pinyin
-- answer_hanzi: an example answer to the question, in characters
-- answer_translation: an example answer to the question, translated to English
-
-If the input is invalid (e.g., question given in Chinese instead of English), then the last
-line of your output MUST be a JSON object with a single field, `error`, containing a one-
-sentence explanation of the error.
-
-Translate questions idiomatically, not word-for-word. Use elementary to intermediate
-vocabulary.
-
-For example:
-
-<user>
-What was your major in college?
-</user>
-
-<model>
-{"question_pinyin": "Nǐ dàxué xué de shì shénme zhuānyè?", "question_hanzi": "你大学学的是什么专业？", "answer_pinyin": "Wǒ dàxué xué de shì jìsuànjī kēxué.", "answer_hanzi": "我大学学的是计算机科学。", "answer_translation": "I majored in computer science."}
-</model>
-"""
-
-
-@dataclass
-class LLMQuestionNote(kgjson.Base):
-    question_pinyin: str
-    question_hanzi: str
-    answer_pinyin: str
-    answer_hanzi: str
-    answer_translation: str
-
-
-def generate_question_note(question: str) -> LLMQuestionNote:
-    with pgdb.connect() as db:
-        LOG.info("start: generating question note (%s)", question)
-        response = llm.oneshot(
-            db,
-            question,
-            model=MODEL,
-            system_prompt=QUESTION_PROMPT,
-            app_name=_app_name("question"),
-            options=llm.InferenceOptions.fast(),
-        )
-        LOG.info("end:   generating question note (%s)", question)
-
-        last_line_json = _parse_last_line_as_json(response)
-        return LLMQuestionNote.deserialize(last_line_json)
+        try:
+            last_line_json = _parse_last_line_as_json(response)
+            return LLMWordNote.deserialize(last_line_json)
+        except Exception as e:
+            raise KgError(
+                "I was unable to parse the last line of the LLM response's as JSON.",
+                error=e,
+                text=response.output_text,
+            )
 
 
 def _parse_last_line_as_json(response: llm.ModelResponse) -> StrDict:
     text = response.output_text
     last_line = text.splitlines()[-1]
-    try:
-        last_line_json = json.loads(last_line)
-    except Exception as e:
-        raise KgError(
-            "I was unable to parse the last line of the LLM response's as JSON.",
-            error=e,
-            last_line=last_line,
-        )
-
+    last_line_json = json.loads(last_line)
     error = last_line_json.get("error")
     if error:
         raise KgError("The LLM flagged an error in the request.", error=error)
@@ -272,3 +212,54 @@ def generate_dui_bu_dui_prompt(n: int) -> str:
 
 def _app_name(subsystem: str) -> str:
     return f"zhongwen::{subsystem}"
+
+
+STORY_GENERATION_PROMPT = """\
+You write texts for an English learner of Mandarin Chinese to translate into
+Mandarin.
+
+You are given a list of vocabulary items and a topic, and you should construct
+a short text (around 10 sentences) in English that uses these vocabulary items.
+Pick 3 new related vocab items that are not in the set to include in the story,
+and provide definitions below. Do not output any extra commentary besides the
+text and the new words.
+
+Use simplified characters.
+
+<user>
+['吃 to eat', '因为 because', '苹果 apple', <more vocabulary omitted>]
+
+Topic: daily routine
+</user>
+
+<model>
+I ate at breakfast at 8 am this morning. <more sentences omitted>
+
+New words:
+- 菠萝 (bōluó) 'pineapple'
+- <2 more words omitted>
+</model>
+"""
+
+
+def generate_text(topic: str) -> str:
+    word_notes = ankiconnect.search_notes('"note:Chinese 2026 word"')
+    words = [
+        note.fields["hanzi"].value + " " + note.fields["translation"].value
+        for note in word_notes
+    ]
+
+    assert len(words) > 0
+
+    with pgdb.connect() as db:
+        LOG.info("start: generating prompt")
+        response = llm.oneshot(
+            db,
+            json.dumps(words) + f"\n\nTopic: {topic}",
+            model=MODEL,
+            system_prompt=STORY_GENERATION_PROMPT,
+            app_name=_app_name("story"),
+            options=llm.InferenceOptions.normal(),
+        )
+        LOG.info("end:   generating prompt")
+        return response.output_text
