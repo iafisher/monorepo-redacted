@@ -46,6 +46,7 @@ def init(*, level: int = logging.INFO) -> None:
 
     # httpx INFO logs are spammy, especially with `lib/llm`
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpx2").setLevel(logging.WARNING)
 
     handler = logging.StreamHandler(sys.stderr)
     formatter = ConcisePathFormatter(

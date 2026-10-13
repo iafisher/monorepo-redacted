@@ -1,4 +1,4 @@
-from . import storage, tools, universal
+from . import imgen, storage, tools, universal
 from .base import (
     MAX_TOKENS,
     APIWrapper,

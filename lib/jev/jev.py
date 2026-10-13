@@ -10,6 +10,13 @@ class ApiQuestion(kgjson.Base):
     instructions: str
     criteria: Optional[Dict[str, str]] = None
 
+    @classmethod
+    def noul(cls, instructions: str) -> "ApiQuestion":
+        """
+        Creates a yes-or-no question.
+        """
+        return cls(type="noul", instructions=instructions)
+
 
 @dataclass
 class ApiRequest(kgjson.Base):
@@ -82,6 +89,43 @@ def decide_yes_or_no(state: str, instructions: str) -> float:
             api_answer=api_answer,
         )
     return api_answer.noul
+
+
+def decide_many_yes_or_no(
+    state: str, questions: List[Tuple[str, str]]
+) -> List[Tuple[str, float]]:
+    """
+    `questions` is a list of `(question_name, instructions)`.
+
+    Returns a list of `(question_name, probability_of_yes)`.
+    """
+    api_questions = [
+        (question_name, ApiQuestion(type="noul", instructions=instructions))
+        for question_name, instructions in questions
+    ]
+    api_response = decide(state, api_questions)
+    r: List[Tuple[str, float]] = []
+    for question_name, _ in questions:
+        try:
+            api_answer = api_response.answers[question_name]
+        except KeyError:
+            raise KgError(
+                "The API response did not contain the expected question key.",
+                question_name=question_name,
+                api_response=api_response,
+            )
+        else:
+            if api_answer.noul is None:
+                raise KgError(
+                    "The `noul` field on the answer object is unexpectedly blank or missing"
+                    " for a `type='noul'` question.",
+                    question_name=question_name,
+                    api_answer=api_answer,
+                )
+
+            r.append((question_name, api_answer.noul))
+
+    return r
 
 
 def decide_from_choices(

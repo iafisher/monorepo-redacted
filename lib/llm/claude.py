@@ -19,6 +19,7 @@ from .base import (
     ModelMisconfigurationError,
     ModelResponse,
     ModelResponseError,
+    ReasoningEffort,
     StopReason,
     ToolUseResponse,
 )
@@ -35,7 +36,8 @@ MOCK_MODELS = (ClaudeModel.MOCK_LOCAL_TOOL_USE, ClaudeModel.MOCK_WEB_SEARCH)
 class Claude(APIWrapper):
     def __init__(self, model: str) -> None:
         self.model = ClaudeModel(model)
-        api_key = secrets.get_or_raise("ANTHROPIC_API_KEY")
+        api_key_name = os.environ.get("ANTHROPIC_API_KEY_NAME", "ANTHROPIC_API_KEY")
+        api_key = secrets.get_or_raise(api_key_name)
         self.client = anthropic.Anthropic(api_key=api_key)
 
     @override
@@ -294,6 +296,7 @@ def _create_thinking_param(
             return _create_thinking_param_legacy(options, model), None
         case (
             ClaudeModel.FABLE_5
+            | ClaudeModel.HAIKU_5_5
             | ClaudeModel.OPUS_4_6
             | ClaudeModel.OPUS_4_8
             | ClaudeModel.OPUS_5
@@ -301,6 +304,10 @@ def _create_thinking_param(
             | ClaudeModel.SONNET_5
         ):
             return _create_thinking_param_adaptive(options)
+        case ClaudeModel.SONNET_5_5:
+            return _create_thinking_param_adaptive_sonnet_5_5(options)
+        case ClaudeModel.OPUS_5_5:
+            return _create_thinking_param_adaptive_opus_5_5(options)
         case ClaudeModel.MOCK_LOCAL_TOOL_USE | ClaudeModel.MOCK_WEB_SEARCH:
             return None, None
 
@@ -309,22 +316,57 @@ def _create_thinking_param(
 
 def _create_thinking_param_adaptive(options: InferenceOptions) -> Tuple[Any, Any]:
     if options.reasoning is None:
-        return anthropic_types.ThinkingConfigDisabledParam(type="disabled"), None
+        return (anthropic_types.ThinkingConfigDisabledParam(type="disabled"), None)
     else:
-        match options.reasoning.effort:
-            case "dynamic":
-                output_config = None
-            case "high":
-                output_config = anthropic_types.OutputConfigParam(effort="high")
-            case "medium":
-                output_config = anthropic_types.OutputConfigParam(effort="medium")
-            case "low":
-                output_config = anthropic_types.OutputConfigParam(effort="low")
-
+        output_config = _reasoning_effort(options.reasoning.effort)
         return (
             anthropic_types.ThinkingConfigAdaptiveParam(type="adaptive"),
             output_config,
         )
+
+
+def _create_thinking_param_adaptive_sonnet_5_5(
+    options: InferenceOptions,
+) -> Tuple[Any, Any]:
+    if options.reasoning is None:
+        return (anthropic_types.ThinkingConfigDisabledParam(type="between_tools"), None)  # type: ignore
+    else:
+        output_config = _reasoning_effort(options.reasoning.effort)
+        return (
+            anthropic_types.ThinkingConfigAdaptiveParam(type="adaptive"),
+            output_config,
+        )
+
+
+def _create_thinking_param_adaptive_opus_5_5(
+    options: InferenceOptions,
+) -> Tuple[Any, Any]:
+    if options.reasoning is None:
+        effort = "low"
+    else:
+        effort = options.reasoning.effort
+
+    output_config = _reasoning_effort(effort)
+    return (
+        anthropic_types.ThinkingConfigAdaptiveParam(type="adaptive"),
+        output_config,
+    )
+
+
+def _reasoning_effort(
+    effort: ReasoningEffort,
+) -> Optional[anthropic_types.OutputConfigParam]:
+    match effort:
+        case "dynamic":
+            return None
+        case "high":
+            return anthropic_types.OutputConfigParam(effort="high")
+        case "medium":
+            return anthropic_types.OutputConfigParam(effort="medium")
+        case "low":
+            return anthropic_types.OutputConfigParam(effort="low")
+
+    impossible()
 
 
 def _create_thinking_param_legacy(options: InferenceOptions, model: str) -> Any:

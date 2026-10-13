@@ -5,23 +5,26 @@ from app.zhongwen import ankiconnect
 from iafisher.prelude import *
 from lib import kgjson, llm, pgdb
 
-MODEL = "sonnet"
+# TODO(2026-10): Upgrade to 5.5 (blocked on API error):
+#   To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead of {"type": "disabled"}
+MODEL = "claude-sonnet-5-5"
 
 
-def _make_word_prompt(*, pinyin: str, translation: str) -> str:
-    return f"{pinyin} '{translation}'"
+def _make_word_prompt(*, hanzi: str, translation: str) -> str:
+    return f"{hanzi} '{translation}'"
 
 
 WORD_PROMPT = """\
-You create example sentences in Mandarin Chinese for a language learner.
+You create example sentences in Mandarin Chinese for a language learner, to be imported
+into an Anki deck.
 
-You are given a word and English translation, and you must produce two example sentences
-and a question/answer exchange.
+You are given a Chinese word and English translation, and you must produce two example
+sentences and a question/answer exchange.
 
 If the input is valid, then the last line of your output MUST be a JSON object with the
 following fields:
 
-- hanzi: the given word in simplified characters
+- pinyin: the given word in Pinyin
 - sentence1_pinyin: the first example sentence, in Pinyin
 - sentence1_hanzi: the first example sentence, in characters
 - sentence1_translation: the first example sentence, translated to English
@@ -35,22 +38,19 @@ following fields:
 - answer1_hanzi: the answer in characters
 - answer1_translation: the answer translated to English
 
-If the input is invalid (incorrect pinyin or incorrect translation), then the last line
-of your output MUST be a JSON object with a single field, `error`, containing a one-sentence
-explanation of the error. If the pinyin is incorrect, you must give an error. If the
-translation is seriously incorrect, you must give an error. If the translation has a minor
-inaccuracy, then proceed, generating valid sentences.
-
-Do not give an error for pinyin that is ambiguous if the translation correctly identifies
-one of the possible characters. For example, if the user supplies "qiáng 'strong'", you
-must not give an error even though 'qiáng' can also mean wall.
+If the input is serious incorrectly (e.g., 试 'to get wet'), then the last line of your
+output MUST be a JSON object with a single field, `error`, containing a one-sentence
+explanation of the error. If the translation has a minor inaccuracy, then you MUST proceed
+with generating valid sentences.
 
 One of the sentences should be a simple clause, while the other sentence should have
 two clauses (e.g., "X, but Y" or "X, because Y", or "After X, Y" or "N said that X"
 or "X, even though Y", etc.). Sentences may be declarations or commands.
 
 The example question and answer should be single clauses. The question should not contain
-the target word, while the answer must contain the target word.
+the target word, while the answer must contain the target word. Exception: if the target
+word is itself a question word (e.g., 什么些), then include it in the question instead of
+the answer.
 
 Use elementary to intermediate vocabulary. Choose words that complement the target
 word, e.g., for "chī 'to eat'" include words related to food, cooking, or the
@@ -63,7 +63,7 @@ For example:
 </user>
 
 <model>
-{"hanzi": "吃", "sentence1_pinyin": "Wǒ méi chī wán yīnwèi wǒ bú è.", "sentence1_hanzi": "我没吃完因为我不饿。", "sentence1_translation": "I didn't finish eating because I wasn't hungry.", "sentence2_pinyin": "Wǒ chī píngguǒ.", "sentence2_hanzi": "我吃苹果。", "sentence2_translation": "I eat an apple.", "question1_pinyin": "Nǐ wǔfàn shì shénme?", "question1_hanzi": "你午饭是什么?", "answer1_pinyin": "Wǒ chī le jīròu hé mǐfàn.", "answer1_hanzi": "我吃了鸡肉和米饭。", "answer1_translation": "I ate chicken and rice."}
+{"pinyin": "chī", "sentence1_pinyin": "Wǒ méi chī wán yīnwèi wǒ bú è.", "sentence1_hanzi": "我没吃完因为我不饿。", "sentence1_translation": "I didn't finish eating because I wasn't hungry.", "sentence2_pinyin": "Wǒ chī píngguǒ.", "sentence2_hanzi": "我吃苹果。", "sentence2_translation": "I eat an apple.", "question1_pinyin": "Nǐ wǔfàn shì shénme?", "question1_hanzi": "你午饭是什么?", "question1_translation": "What did you have for lunch?", "answer1_pinyin": "Wǒ chī le jīròu hé mǐfàn.", "answer1_hanzi": "我吃了鸡肉和米饭。", "answer1_translation": "I ate chicken and rice."}
 </model>
 
 <user>
@@ -71,17 +71,17 @@ For example:
 </user>
 
 <model>
-{"error": "The word 'xīguā' means 'watermelon', not 'pineapple'."}
+{"error": "The word '试' means 'to try', not 'to get wet', which is '湿'."}
 </model>
 """ % dict(
-    correct_prompt=_make_word_prompt(pinyin="chī", translation="to eat"),
-    incorrect_prompt=_make_word_prompt(pinyin="xīguā", translation="pineapple"),
+    correct_prompt=_make_word_prompt(hanzi="吃", translation="to eat"),
+    incorrect_prompt=_make_word_prompt(hanzi="试", translation="to get wet"),
 )
 
 
 @dataclass
 class LLMWordNote(kgjson.Base):
-    hanzi: str
+    pinyin: str
     sentence1_pinyin: str
     sentence1_hanzi: str
     sentence1_translation: str
@@ -96,18 +96,18 @@ class LLMWordNote(kgjson.Base):
     answer1_translation: str
 
 
-def generate_word_note(*, pinyin: str, translation: str) -> LLMWordNote:
+def generate_word_note(*, hanzi: str, translation: str) -> LLMWordNote:
     with pgdb.connect() as db:
-        LOG.info("start: generating word note (%s)", pinyin)
+        LOG.info("start: generating word note (%s)", hanzi)
         response = llm.oneshot(
             db,
-            _make_word_prompt(pinyin=pinyin, translation=translation),
+            _make_word_prompt(hanzi=hanzi, translation=translation),
             model=MODEL,
             system_prompt=WORD_PROMPT,
             app_name=_app_name("word"),
             options=llm.InferenceOptions.fast(),
         )
-        LOG.info("end:   generating word note (%s)", pinyin)
+        LOG.info("end:   generating word note (%s)", hanzi)
 
         try:
             last_line_json = _parse_last_line_as_json(response)
@@ -118,6 +118,28 @@ def generate_word_note(*, pinyin: str, translation: str) -> LLMWordNote:
                 error=e,
                 text=response.output_text,
             )
+
+
+IMAGE_GENERATION_PROMPT = """\
+You generate images for a Chinese-language learner to illustrate example sentences
+in their Anki deck.
+
+The image should suggest the sentence but does not need to capture every detail of it.
+It is enough to depict a general scene or scenario where or about which the sentence
+might be uttered.
+
+For instance, the sentence "Because the password was too simple, his account got hacked"
+could be illustrated by a person sitting at a computer.
+
+Draw the images in a classical Chinese illustrated storybook style. The setting should be
+China. Default to a historical setting unless incompatible with the prompt (e.g., if the
+prompt describes computers).
+"""
+
+
+def generate_image(sentence: str) -> bytes:
+    prompt = IMAGE_GENERATION_PROMPT + "\n\nThe sentence to illustrate: " + sentence
+    return llm.imgen.generate_image(prompt, quality="low", format_="jpeg")
 
 
 def _parse_last_line_as_json(response: llm.ModelResponse) -> StrDict:
@@ -194,7 +216,7 @@ After the last sentence, say "游戏结束了。"
 def generate_dui_bu_dui_prompt(n: int) -> str:
     notes = ankiconnect.search_notes(f'"note:{ankiconnect.WORD_NOTE_TYPE}"')
     random.shuffle(notes)
-    selected_words = [note.fields["hanzi"].value for note in notes[:n]]
+    selected_words = [note.get_field_value("hanzi") for note in notes[:n]]
 
     with pgdb.connect() as db:
         LOG.info("start: generating prompt")
@@ -245,7 +267,7 @@ New words:
 def generate_text(topic: str) -> str:
     word_notes = ankiconnect.search_notes('"note:Chinese 2026 word"')
     words = [
-        note.fields["hanzi"].value + " " + note.fields["translation"].value
+        note.get_field_value("hanzi") + " " + note.get_field_value("translation")
         for note in word_notes
     ]
 
@@ -263,3 +285,87 @@ def generate_text(topic: str) -> str:
         )
         LOG.info("end:   generating prompt")
         return response.output_text
+
+
+# TODO(2026-10): Generate the field documentation in the prompts directly from the
+# Python classes using type annotations on each field.
+
+
+CHARACTER_PROMPT = """\
+You create examples of Mandarin Chinese characters for a language learner, to be imported
+into an Anki deck.
+
+You are given a character, and you must produce the pinyin and two example words.
+
+If the input is valid, then the last line of your output MUST be a JSON object with the
+following fields:
+
+- pinyin: the given character in Pinyin (if multiple options, choose the most common one)
+- example1_hanzi: the first example word, in simplified characters
+- example1_pinyin: the first example word, in Pinyin
+- example1_translation: the first example word, translated to English
+- example2_hanzi: the second example word, in simplified characters
+- example2_pinyin: the second example word, in Pinyin
+- example2_translation: the second example word, translated to English
+
+If the input is invalid (i.e., it is not a Chinese character), then the last line of your
+output MUST be a JSON object with a single field, `error`, containing a one-sentence
+explanation of the error.
+
+Do not give an error for any reason other than the input not being a Chinese character.
+
+Do not use obscure, technical, or archaic vocabulary for the example words.
+
+For example:
+
+<user>
+店
+</user>
+
+<model>
+{"pinyin": "diàn", "example1_hanzi": "商店", "example1_pinyin": "shāngdiàn", "example1_translation": "store", "example2_hanzi": 酒店", "example2_pinyin": "jiǔdiàn", "example2_translation": "hotel"}
+</model>
+
+<user>
+tī
+</user>
+
+<model>
+{"error": "The input was not a Chinese character."}
+</model>
+"""
+
+
+@dataclass
+class LLMCharacterNote(kgjson.Base):
+    pinyin: str
+    example1_hanzi: str
+    example1_pinyin: str
+    example1_translation: str
+    example2_hanzi: str
+    example2_pinyin: str
+    example2_translation: str
+
+
+def generate_character_note(hanzi: str) -> LLMCharacterNote:
+    with pgdb.connect() as db:
+        LOG.info("start: generating character note (%s)", hanzi)
+        response = llm.oneshot(
+            db,
+            hanzi,
+            model=MODEL,
+            system_prompt=CHARACTER_PROMPT,
+            app_name=_app_name("character"),
+            options=llm.InferenceOptions.fast(),
+        )
+        LOG.info("end:   generating character note (%s)", hanzi)
+
+        try:
+            last_line_json = _parse_last_line_as_json(response)
+            return LLMCharacterNote.deserialize(last_line_json)
+        except Exception as e:
+            raise KgError(
+                "I was unable to parse the last line of the LLM response's as JSON.",
+                error=e,
+                text=response.output_text,
+            )

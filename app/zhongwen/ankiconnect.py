@@ -1,11 +1,12 @@
+import base64
 from abc import ABC, abstractmethod
 
 from iafisher.prelude import *
 from lib import kghttp, kgjson
 
 ANKI_DECK = "Chinese 2026"
+CHARACTER_NOTE_TYPE = "Chinese 2026 character"
 WORD_NOTE_TYPE = "Chinese 2026 word"
-QUESTION_NOTE_TYPE = "Chinese 2026 question"
 
 
 class AnkiNote(ABC):
@@ -19,7 +20,7 @@ class AnkiNote(ABC):
 
 
 def upload_note(note: AnkiNote) -> None:
-    _submit("addNote", note.to_params(ANKI_DECK))
+    _submit("addNote", note.to_params(ANKI_DECK), expect_result=True)
 
 
 @dataclass
@@ -35,19 +36,60 @@ class NoteInfo(kgjson.Base):
     tags: List[str]
     raw: Annotated[StrDict, kgjson.StoreMessage()] = dataclasses.field(repr=False)
 
-    def has_field_value(self, fieldname: str, value: str) -> bool:
+    def get_field_value(self, fieldname: str) -> str:
         field = self.fields.get(fieldname)
-        return field is not None and field.value == value
+        return field.value if field is not None else ""
+
+    def has_field_value(self, fieldname: str, value: str) -> bool:
+        return self.get_field_value(fieldname) == value
+
+
+def update_note_fields(note: NoteInfo) -> None:
+    fields = {fieldname: field.value for fieldname, field in note.fields.items()}
+    _submit(
+        "updateNoteFields",
+        {"note": {"id": note.note_id, "fields": fields}},
+        expect_result=False,
+    )
 
 
 def search_notes(query: str) -> List[NoteInfo]:
     query = f'"deck:{ANKI_DECK}" {query}'
-    note_ids = _submit("findNotes", dict(query=query))
-    note_info_dicts = _submit("notesInfo", dict(notes=note_ids))
+    note_ids = _submit("findNotes", dict(query=query), expect_result=True)
+    return fetch_notes_by_id(note_ids)
+
+
+@dataclass
+class CardInfo(kgjson.Base):
+    card_id: int
+    answer: str
+    question: str
+    interval: int
+    note: int
+    raw: Annotated[StrDict, kgjson.StoreMessage()] = dataclasses.field(repr=False)
+
+
+def search_cards(query: str) -> List[CardInfo]:
+    query = f'"deck:{ANKI_DECK}" {query}'
+    card_ids = _submit("findCards", dict(query=query), expect_result=True)
+    card_info_dicts = _submit("cardsInfo", dict(cards=card_ids), expect_result=True)
+    return [CardInfo.deserialize(d, camel_case=True) for d in card_info_dicts]
+
+
+def fetch_notes_by_id(note_ids: List[int]) -> List[NoteInfo]:
+    note_info_dicts = _submit("notesInfo", dict(notes=note_ids), expect_result=True)
     return [NoteInfo.deserialize(d, camel_case=True) for d in note_info_dicts]
 
 
-def _submit(action: str, params: StrDict) -> Any:
+def store_media_file(filename: str, file_bytes: bytes) -> None:
+    _submit(
+        "storeMediaFile",
+        dict(filename=filename, data=base64.b64encode(file_bytes).decode("ascii")),
+        expect_result=False,
+    )
+
+
+def _submit(action: str, params: StrDict, *, expect_result: bool) -> Any:
     payload = {"action": action, "version": 6, "params": params}
 
     LOG.info("start: querying Anki (%s)", action)
@@ -56,7 +98,7 @@ def _submit(action: str, params: StrDict) -> Any:
 
     json_response = http_response.json()
     result = json_response.get("result")
-    if result is None:
+    if expect_result and result is None:
         raise KgError(
             "AnkiConnect response missing",
             error=json_response.get("error"),
@@ -76,7 +118,9 @@ class AnkiWordNote(AnkiNote):
     question1_audio: pathlib.Path
     answer1_audio: pathlib.Path
     pinyin: str
+    pinyin_colorized: str
     hanzi: str
+    hanzi_colorized: str
     translation: str
     sentence1_pinyin: str
     sentence1_hanzi: str
@@ -90,13 +134,16 @@ class AnkiWordNote(AnkiNote):
     answer1_pinyin: str
     answer1_hanzi: str
     answer1_translation: str
+    sentence1_image: Optional[str] = None
+    sentence2_image: Optional[str] = None
+    question1_image: Optional[str] = None
 
     @override
     def to_params(self, deck: str) -> StrDict:
         return _add_note_params(
             deck,
             WORD_NOTE_TYPE,
-            _replace_paths(dataclasses.asdict(self)),
+            _replace_audio_paths(dataclasses.asdict(self)),
             [
                 ("word_audio", self.word_audio),
                 ("sentence1_audio", self.sentence1_audio),
@@ -121,9 +168,30 @@ def _add_note_params(
     }
 
 
-def _replace_paths(d: StrDict) -> StrDict:
-    return {k: "[audio]" if isinstance(v, pathlib.Path) else v for k, v in d.items()}
+def _replace_audio_paths(d: StrDict) -> StrDict:
+    return {
+        k: "[声]" if isinstance(v, pathlib.Path) and "audio" in k else v
+        for k, v in d.items()
+    }
 
 
 def _audio_param(field: str, path: pathlib.Path) -> StrDict:
     return {"path": path.as_posix(), "filename": path.name, "fields": [field]}
+
+
+@dataclass
+class AnkiCharacterNote(AnkiNote):
+    hanzi: str
+    pinyin: str
+    example1_hanzi: str
+    example1_pinyin: str
+    example1_translation: str
+    example2_hanzi: str
+    example2_pinyin: str
+    example2_translation: str
+
+    @override
+    def to_params(self, deck: str) -> StrDict:
+        return _add_note_params(
+            deck, CHARACTER_NOTE_TYPE, dataclasses.asdict(self), audio=[]
+        )

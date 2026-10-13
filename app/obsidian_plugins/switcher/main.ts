@@ -25,6 +25,10 @@ class SwitcherModal extends Modal {
     const files = this.app.vault.getMarkdownFiles();
 
     for (const file of files) {
+      if (!file.path.startsWith("archive/")) {
+        continue;
+      }
+
       const cache = this.app.metadataCache.getFileCache(file);
       const title =
         cache?.frontmatter?.title ||

@@ -260,7 +260,7 @@ def estimate_conversation_cost(
         """
         SELECT
           model,
-          COALESCE(input_tokens, 0) AS totaL_input_tokens,
+          COALESCE(input_tokens, 0) AS total_input_tokens,
           COALESCE(output_tokens, 0) AS total_output_tokens,
           COALESCE(reasoning_tokens, 0) AS total_reasoning_tokens,
           COALESCE(cache_read_tokens, 0) AS total_cache_read_tokens,

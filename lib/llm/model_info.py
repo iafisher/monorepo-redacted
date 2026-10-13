@@ -45,108 +45,12 @@ MODEL_TO_INFO: Dict[str, ModelInfo] = {}
 # https://developers.openai.com/api/docs/models/compare
 for model_name in GptModel:
     match model_name:
-        case GptModel.GPT_5_4_MINI:
-            model_info = ModelInfo(
-                GPT,
-                family=MODEL_FAMILY_GPT,
-                token_limit=400_000,
-                nicknames=["chatgpt-5-mini", "gpt-mini"],
-                tags=[TAG_FAST],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("0.75"),
-                    per_1m_output_tokens=Decimal("4.50"),
-                    per_1m_reasoning_tokens=None,
-                    per_1m_cache_read_tokens=Decimal("0.08"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
-        case GptModel.GPT_5_4_NANO:
-            model_info = ModelInfo(
-                GPT,
-                family=MODEL_FAMILY_GPT,
-                token_limit=400_000,
-                nicknames=["chatgpt-5-nano", "gpt-nano"],
-                tags=[TAG_FAST],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("0.20"),
-                    per_1m_output_tokens=Decimal("1.25"),
-                    per_1m_reasoning_tokens=None,
-                    per_1m_cache_read_tokens=Decimal("0.02"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
-        case GptModel.GPT_5_1:
-            model_info = ModelInfo(
-                GPT,
-                family=MODEL_FAMILY_GPT,
-                token_limit=400_000,
-                nicknames=["chatgpt-5.1", "gpt-5.1", "gpt5.1"],
-                tags=[TAG_SLOW],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("1.25"),
-                    per_1m_output_tokens=Decimal("10.00"),
-                    per_1m_reasoning_tokens=Decimal("10.00"),
-                    per_1m_cache_read_tokens=Decimal("0.13"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
-        case GptModel.GPT_5_2:
-            model_info = ModelInfo(
-                GPT,
-                family=MODEL_FAMILY_GPT,
-                token_limit=400_000,
-                nicknames=["chatgpt-5.2", "gpt-5.2", "gpt5.2"],
-                tags=[TAG_SLOW],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("1.75"),
-                    per_1m_output_tokens=Decimal("14.00"),
-                    per_1m_reasoning_tokens=Decimal("14.00"),
-                    per_1m_cache_read_tokens=Decimal("0.18"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
-        case GptModel.GPT_5_2_CODEX:
-            model_info = ModelInfo(
-                GPT,
-                family=MODEL_FAMILY_GPT,
-                token_limit=400_000,
-                nicknames=[
-                    "gpt-5-codex",
-                    "gpt-5.2-codex",
-                    "gpt5-codex",
-                    "gpt5.2-codex",
-                    "codex",
-                ],
-                tags=[TAG_SLOW],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("1.75"),
-                    per_1m_output_tokens=Decimal("14.00"),
-                    per_1m_reasoning_tokens=Decimal("14.00"),
-                    per_1m_cache_read_tokens=Decimal("0.18"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
-        case GptModel.GPT_5_5:
-            model_info = ModelInfo(
-                GPT,
-                family=MODEL_FAMILY_GPT,
-                token_limit=1_050_000,
-                nicknames=["gpt-5.5", "gpt5.5"],
-                tags=[TAG_SLOW],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("5.00"),
-                    per_1m_output_tokens=Decimal("30.00"),
-                    per_1m_reasoning_tokens=None,
-                    per_1m_cache_read_tokens=Decimal("0.50"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
         case GptModel.GPT_5_6_SOL:
             model_info = ModelInfo(
                 GPT,
                 family=MODEL_FAMILY_GPT,
                 token_limit=1_050_000,
-                nicknames=["sol"],
+                nicknames=[],
                 tags=[TAG_SLOW],
                 token_cost=TokenCost(
                     per_1m_input_tokens=Decimal("5.00"),
@@ -175,7 +79,7 @@ for model_name in GptModel:
                 GPT,
                 family=MODEL_FAMILY_GPT,
                 token_limit=1_050_000,
-                nicknames=["luna"],
+                nicknames=[],
                 tags=[TAG_FAST],
                 token_cost=TokenCost(
                     per_1m_input_tokens=Decimal("0.20"),
@@ -183,6 +87,35 @@ for model_name in GptModel:
                     per_1m_reasoning_tokens=None,
                     per_1m_cache_read_tokens=Decimal("0.02"),
                     per_1m_cache_creation_tokens=None,
+                ),
+            )
+        case GptModel.GPT_6_1_SOL:
+            model_info = ModelInfo(
+                GPT,
+                family=MODEL_FAMILY_GPT,
+                token_limit=1_050_000,
+                nicknames=["sol"],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("2.00"),
+                    per_1m_output_tokens=Decimal("10.00"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.10"),
+                    per_1m_cache_creation_tokens=Decimal("2.50"),
+                ),
+            )
+        case GptModel.GPT_6_LUNA:
+            model_info = ModelInfo(
+                GPT,
+                family=MODEL_FAMILY_GPT,
+                token_limit=1_050_000,
+                nicknames=["luna"],
+                tags=[TAG_FAST],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("0.10"),
+                    per_1m_output_tokens=Decimal("0.50"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.01"),
+                    per_1m_cache_creation_tokens=Decimal("0.125"),
                 ),
             )
         case GptModel.GPT_MOCK_WEB_SEARCH:
@@ -205,7 +138,7 @@ for model_name in ClaudeModel:
                 Claude,
                 family=MODEL_FAMILY_CLAUDE,
                 token_limit=200_000,
-                nicknames=["claude-haiku", "haiku"],
+                nicknames=[],
                 tags=[TAG_FAST],
                 token_cost=TokenCost(
                     per_1m_input_tokens=Decimal("1.00"),
@@ -213,6 +146,23 @@ for model_name in ClaudeModel:
                     per_1m_reasoning_tokens=None,
                     per_1m_cache_read_tokens=Decimal("0.10"),
                     per_1m_cache_creation_tokens=Decimal("1.25"),
+                ),
+            )
+        case ClaudeModel.HAIKU_5_5:
+            model_info = ModelInfo(
+                Claude,
+                family=MODEL_FAMILY_CLAUDE,
+                token_limit=1_000_000,
+                nicknames=["claude-haiku", "haiku"],
+                tags=[TAG_FAST],
+                token_cost=TokenCost(
+                    # TODO(2026-10): these prices are up to 100,000 tokens, after that it is $0.50/$2.50
+                    per_1m_input_tokens=Decimal("0.10"),
+                    per_1m_output_tokens=Decimal("0.50"),
+                    per_1m_reasoning_tokens=None,
+                    # TODO(2026-10): these prices are up to 100,000 tokens, after that it is $0.05/$0.625
+                    per_1m_cache_read_tokens=Decimal("0.01"),
+                    per_1m_cache_creation_tokens=Decimal("0.125"),
                 ),
             )
         case ClaudeModel.OPUS_4_5:
@@ -266,7 +216,7 @@ for model_name in ClaudeModel:
                 Claude,
                 family=MODEL_FAMILY_CLAUDE,
                 token_limit=1_000_000,
-                nicknames=["claude-opus", "opus"],
+                nicknames=[],
                 tags=[TAG_SLOW],
                 token_cost=TokenCost(
                     per_1m_input_tokens=Decimal("5.00"),
@@ -274,6 +224,21 @@ for model_name in ClaudeModel:
                     per_1m_reasoning_tokens=None,
                     per_1m_cache_read_tokens=Decimal("0.50"),
                     per_1m_cache_creation_tokens=Decimal("10.00"),
+                ),
+            )
+        case ClaudeModel.OPUS_5_5:
+            model_info = ModelInfo(
+                Claude,
+                family=MODEL_FAMILY_CLAUDE,
+                token_limit=1_000_000,
+                nicknames=["claude-opus", "opus"],
+                tags=[TAG_SLOW],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("4.00"),
+                    per_1m_output_tokens=Decimal("20.00"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.20"),
+                    per_1m_cache_creation_tokens=Decimal("5.00"),
                 ),
             )
         case ClaudeModel.SONNET_4_5:
@@ -309,13 +274,27 @@ for model_name in ClaudeModel:
                 Claude,
                 family=MODEL_FAMILY_CLAUDE,
                 token_limit=1_000_000,
-                nicknames=["claude-sonnet", "sonnet"],
+                nicknames=[],
                 token_cost=TokenCost(
                     per_1m_input_tokens=Decimal("3.00"),
                     per_1m_output_tokens=Decimal("15.00"),
                     per_1m_reasoning_tokens=None,
                     per_1m_cache_read_tokens=Decimal("0.30"),
                     per_1m_cache_creation_tokens=Decimal("3.75"),
+                ),
+            )
+        case ClaudeModel.SONNET_5_5:
+            model_info = ModelInfo(
+                Claude,
+                family=MODEL_FAMILY_CLAUDE,
+                token_limit=1_000_000,
+                nicknames=["claude-sonnet", "sonnet"],
+                token_cost=TokenCost(
+                    per_1m_input_tokens=Decimal("4.00"),
+                    per_1m_output_tokens=Decimal("20.00"),
+                    per_1m_reasoning_tokens=None,
+                    per_1m_cache_read_tokens=Decimal("0.10"),
+                    per_1m_cache_creation_tokens=Decimal("2.50"),
                 ),
             )
         case ClaudeModel.FABLE_5:
@@ -458,7 +437,7 @@ MODEL_FAMILY_TO_INFO = {
         slow_model=GeminiModel.GEMINI_PRO_LATEST,
     ),
     MODEL_FAMILY_GPT: ModelFamilyInfo(
-        fast_model=GptModel.GPT_MINI_LATEST, slow_model=GptModel.GPT_5_LATEST
+        fast_model=GptModel.GPT_FAST_LATEST, slow_model=GptModel.GPT_5_LATEST
     ),
 }
 

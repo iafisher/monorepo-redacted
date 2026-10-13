@@ -1,3 +1,6 @@
+import shutil
+import subprocess
+import tempfile
 import time
 from decimal import Decimal
 from typing import Literal
@@ -22,17 +25,56 @@ def main_conversations_count_tokens(conversation_id: int) -> None:
     print(f"{conversation.count_tokens():,}")
 
 
-def main_conversations_estimate_cost(conversation_id: int) -> None:
+def main_conversations_estimate_cost(conversation_id: int, *, detailed: bool) -> None:
     with pgdb.connect() as db:
         cost_breakdown = llm.estimate_conversation_cost(db, conversation_id)
 
+    def usd(x: Union[Decimal, Literal[0]]) -> str:
+        return f"${x:.2f}"
+
     if cost_breakdown is None:
         print("No token pricing information available for this model.")
+    elif detailed:
+        table = tabular.Table()
+        table.header(
+            [
+                "request",
+                "input",
+                "",
+                "output",
+                "",
+                "reasoning",
+                "",
+                "cache read",
+                "",
+                "cache write",
+                "",
+                "cost",
+            ]
+        )
+        total_cost = Decimal(0)
+        for i, r in enumerate(cost_breakdown.requests, start=1):
+            table.row(
+                [
+                    i,
+                    r.total_input_tokens,
+                    usd(r.input_token_cost()),
+                    r.total_output_tokens,
+                    usd(r.output_token_cost()),
+                    r.total_reasoning_tokens,
+                    usd(r.reasoning_token_cost()),
+                    r.total_cache_read_tokens,
+                    usd(r.cache_read_token_cost()),
+                    r.total_cache_creation_tokens,
+                    usd(r.cache_creation_token_cost()),
+                    usd(r.total_cost()),
+                ]
+            )
+            total_cost += r.total_cost()
+        table.flush()
+        print()
+        print(f"Total cost: {usd(total_cost)}")
     else:
-
-        def usd(x: Union[Decimal, Literal[0]]) -> str:
-            return f"${x:.2f}"
-
         table = tabular.Table()
         reqs = cost_breakdown.requests
         table.row(["Input tokens", usd(sum(r.input_token_cost() for r in reqs))])
@@ -189,6 +231,32 @@ def main_oneshot(
         print()
 
 
+def main_test_imgen(prompt: str) -> None:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image_bytes = llm.imgen.generate_image(prompt)
+        image_path = pathlib.Path(tmpdir) / "image.png"
+        image_path.write_bytes(image_bytes)
+
+        exe = _find_open_exe()
+        subprocess.run([exe, image_path])
+        print(f"Image created at {image_path}")
+        print()
+        print("Press <Enter> to delete the image and exit.")
+        input()
+
+
+def _find_open_exe() -> str:
+    exe = shutil.which("xdg-open")
+    if exe is not None:
+        return exe
+
+    exe = shutil.which("open")
+    if exe is not None:
+        return exe
+
+    raise KgError("could not find an `open` executable")
+
+
 def main_test_model(model: str) -> None:
     model = llm.canonicalize_model_name(model)
     print(f"Testing model: {model}")
@@ -217,7 +285,6 @@ def main_test_model(model: str) -> None:
             nonlocal failures
 
             print(f"==> testing {label}... ", end="", flush=True)
-            options = llm.InferenceOptions.normal()
             start_time = time.monotonic()
             response = oneshot(prompt, options)
             end_time = time.monotonic()
@@ -261,6 +328,7 @@ conversations_cmd.add2("list", main_conversations_list, help="List conversations
 conversations_cmd.add2("replay", main_conversations_replay)
 
 test_cmd = command.Group()
+test_cmd.add2("imgen", main_test_imgen)
 test_cmd.add2("model", main_test_model)
 
 # TODO(2026-01): Split some of these off into their own top-level commands?

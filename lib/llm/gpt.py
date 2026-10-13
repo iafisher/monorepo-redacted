@@ -48,21 +48,6 @@ class GPT(APIWrapper):
         temperature = options.temperature
         reasoning = options.reasoning
 
-        if self.model == GptModel.GPT_5_4_MINI:
-            if options.strict:
-                raise ModelMisconfigurationError(
-                    "The model does not support custom temperature.",
-                    model=self.model,
-                    options=options,
-                )
-            else:
-                temperature = 1.0
-                LOG.debug(
-                    "The model (%r) does not support custom temperature, falling back to %s.",
-                    self.model,
-                    temperature,
-                )
-
         if reasoning is None:
             # https://developers.openai.com/api/docs/guides/latest-model#using-reasoning-models
             reasoning_effort = "none"
