@@ -24,16 +24,13 @@ def create_journal(vault: pathlib.Path, *, today: dt.date) -> Optional[pathlib.P
     next_month = timehelper.next_month(today)
     link_format = "[[%Y-%m-%d-journal|%B]]"
     extra_content = f"❮ {last_month.strftime(link_format)} | {today.strftime('%B')} | {next_month.strftime(link_format)} ❯"
-    archive_path, _ = create_note(
+    return create_note(
         vault,
         base_filename,
         title=today.strftime("%B %Y"),
         today=today,
-        overwrite_live_path=True,
-        live_path_override=(vault / "live" / "journal.md"),
         extra_content=extra_content,
     )
-    return archive_path
 
 
 cmd = command.Command.from_function(main, help="Create the monthly journal note.")

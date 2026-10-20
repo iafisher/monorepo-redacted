@@ -38,16 +38,14 @@ def main_create(
     if preview:
         archive_path = format_archive_path(vault, filename, today=today)
         live_path = format_live_path(vault, archive_path)
-        text = format_note_text(
-            title, today=today, archive_path=archive_path.relative_to(vault)
-        )
+        text = format_note_text(title)
         print("Archive path:", archive_path.relative_to(vault))
         print("Live path:   ", live_path.relative_to(vault))
         print()
         print(text)
     else:
-        _, live_path = create_note(vault, filename=filename, title=title, today=today)
-        print(live_path.relative_to(vault))
+        note_path = create_note(vault, filename=filename, title=title, today=today)
+        print(note_path.relative_to(vault))
 
 
 BaseFilename = NewType("BaseFilename", str)
@@ -59,53 +57,28 @@ def create_note(
     *,
     title: str,
     today: dt.date,
-    overwrite_live_path: bool = False,
-    live_path_override: Optional[Path] = None,
     extra_content: str = "",
-) -> Tuple[Path, Path]:
+) -> Path:
     archive_path = format_archive_path(vault, filename, today=today)
-    live_path = opt_or_thunk(
-        live_path_override, lambda: format_live_path(vault, archive_path)
-    )
 
     if archive_path.exists():
         raise KgError(
             "A file with this name already exists.", archive_path=archive_path
         )
 
-    if live_path.exists():
-        if overwrite_live_path:
-            live_path.unlink()
-        else:
-            raise KgError("The live path already exists.", live_path=live_path)
-
-    text = format_note_text(
-        title,
-        today=today,
-        archive_path=archive_path.relative_to(vault),
-        extra_content=extra_content,
-    )
+    text = format_note_text(title, extra_content=extra_content)
 
     archive_path.parent.mkdir(parents=True, exist_ok=True)
     archive_path.write_text(text)
-    live_path.parent.mkdir(parents=True, exist_ok=True)
-    live_path.hardlink_to(archive_path)
-    return archive_path, live_path
+    return archive_path
 
 
 def format_note_text(
-    title: str,
-    *,
-    today: dt.date,
-    archive_path: Path,
-    created_by: str = "human:iafisher",
-    extra_content: str = "",
+    title: str, *, created_by: str = "human:iafisher", extra_content: str = ""
 ) -> str:
     return (
         f"""\
 ---
-date-created: "{today}"
-archive-path: "{archive_path}"
 created-by: "{created_by}"
 ---
 # {title}

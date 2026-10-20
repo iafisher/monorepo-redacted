@@ -44,6 +44,10 @@ class NoteInfo(kgjson.Base):
         return self.get_field_value(fieldname) == value
 
 
+def word_note_to_string(note: NoteInfo) -> str:
+    return f"{note.get_field_value('hanzi')} '{note.get_field_value('translation')}'"
+
+
 def update_note_fields(note: NoteInfo) -> None:
     fields = {fieldname: field.value for fieldname, field in note.fields.items()}
     _submit(
@@ -134,9 +138,9 @@ class AnkiWordNote(AnkiNote):
     answer1_pinyin: str
     answer1_hanzi: str
     answer1_translation: str
-    sentence1_image: Optional[str] = None
-    sentence2_image: Optional[str] = None
-    question1_image: Optional[str] = None
+    sentence1_image: str = ""
+    sentence2_image: str = ""
+    question1_image: str = ""
 
     @override
     def to_params(self, deck: str) -> StrDict:

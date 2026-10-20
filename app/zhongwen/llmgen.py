@@ -5,8 +5,6 @@ from app.zhongwen import ankiconnect
 from iafisher.prelude import *
 from lib import kgjson, llm, pgdb
 
-# TODO(2026-10): Upgrade to 5.5 (blocked on API error):
-#   To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead of {"type": "disabled"}
 MODEL = "claude-sonnet-5-5"
 
 
@@ -121,15 +119,18 @@ def generate_word_note(*, hanzi: str, translation: str) -> LLMWordNote:
 
 
 IMAGE_GENERATION_PROMPT = """\
-You generate images for a Chinese-language learner to illustrate example sentences
-in their Anki deck.
+You generate images for a Chinese-language learner to illustrate example words for
+their Anki deck.
 
-The image should suggest the sentence but does not need to capture every detail of it.
-It is enough to depict a general scene or scenario where or about which the sentence
-might be uttered.
+You are given a word and some sentences using the word in context.
 
-For instance, the sentence "Because the password was too simple, his account got hacked"
-could be illustrated by a person sitting at a computer.
+If the word is a physical object that is easily depicted (e.g., pineapple, car), then
+you should generate a scene prominently featuring that object.
+
+Use the example sentences as inspiration, but you DO NOT need to literally illustrate
+the sentences or capture every detail of them.
+
+DO NOT include the word itself as text in the image.
 
 Draw the images in a classical Chinese illustrated storybook style. The setting should be
 China. Default to a historical setting unless incompatible with the prompt (e.g., if the
@@ -137,8 +138,20 @@ prompt describes computers).
 """
 
 
-def generate_image(sentence: str) -> bytes:
-    prompt = IMAGE_GENERATION_PROMPT + "\n\nThe sentence to illustrate: " + sentence
+def generate_image(word: str, llm_word_note: LLMWordNote) -> bytes:
+    prompt = (
+        IMAGE_GENERATION_PROMPT
+        + "\n\nWord: "
+        + word
+        + "\nSentence 1: "
+        + llm_word_note.sentence1_translation
+        + "\nSentence 2: "
+        + llm_word_note.sentence2_translation
+        + "\nQuestion 1: "
+        + llm_word_note.question1_translation
+        + "\nAnswer 1: "
+        + llm_word_note.answer1_translation
+    )
     return llm.imgen.generate_image(prompt, quality="low", format_="jpeg")
 
 
@@ -363,6 +376,72 @@ def generate_character_note(hanzi: str) -> LLMCharacterNote:
         try:
             last_line_json = _parse_last_line_as_json(response)
             return LLMCharacterNote.deserialize(last_line_json)
+        except Exception as e:
+            raise KgError(
+                "I was unable to parse the last line of the LLM response's as JSON.",
+                error=e,
+                text=response.output_text,
+            )
+
+
+VOCABULARY_SUGGESTION_PROMPT = """\
+You are given a list of words that the user, a learner of Mandarin Chinese, already knows,
+and a topic of interest, and you must suggest the next N words related to that topic that
+the user should learn.
+
+You can give two-word compounds as well as individual words.
+
+Concentrate on choosing the most impactful incremental vocabulary.
+
+The last line of your response MUST be a JSON object with a single field, `words`, that maps
+to a list of objects, each with `hanzi`, `pinyin`, and `translation` fields.
+
+For example:
+
+<user>
+Vocabulary: 虽然 'although', 流利 'fluent', 公司 'company (business)', 听得到 'be able to hear', 发音 'pronunciation', 叉子 'fork', 蔬菜 'vegetable', 香蕉 'banana', 专业 'major, field of study', 那边 'there', 行业 'industry', 别的 'other', 文学 'literature', 柜台 'counter', 哭 'to cry', 散步 'to walk', 冬天 'winter', 忘记 'to forget', 上次 'last time', 员工 'employee', 语言 'language', 背 'to carry', 告诉 'to tell', 得 'to have to', 游戏 'game', 记得 'to remember', 条 'measure word for long things', 面包 'bread', 平常 'normally', 清楚 'clear', 付 'to pay', 健身房 'gym', 叫上 'to invite', 位子 'seat', 双 'pair', 街道 'street', 拿 'to hold', 画面 'screen', 洗澡 'to take a shower', 盘子 'plate'
+Topic: restaurant
+Count: 5
+</user>
+
+<model>
+{"words": [{"hanzi": "菜单", "pinyin": "càidān", "translation": "menu"}, {"hanzi": "服务员", "pinyin": "fúwùyuán", "translation": "waiter/waitress"}, {"hanzi": "点菜", "pinyin": "diǎn cài", "translation": "to order food"}, {"hanzi": "多少钱", "pinyin": "duōshao qián", "translation": "how much money"}]}
+</model>
+"""
+
+
+@dataclass
+class VocabSuggestion(kgjson.Base):
+    hanzi: str
+    pinyin: str
+    translation: str
+
+
+@dataclass
+class VocabSuggestionResponse(kgjson.Base):
+    words: List[VocabSuggestion]
+
+
+def generate_vocabulary_suggestions(
+    topic: str, word_notes: List[ankiconnect.NoteInfo], *, n: int
+) -> List[VocabSuggestion]:
+    note_count = len(word_notes)
+    vocabulary = ", ".join(map(ankiconnect.word_note_to_string, word_notes))
+    with pgdb.connect() as db:
+        LOG.info("start: generating vocabulary suggestions (n=%d)", note_count)
+        response = llm.oneshot(
+            db,
+            f"Vocabulary: {vocabulary}\nTopic: {topic}\nCount: {n}\n",
+            model=MODEL,
+            system_prompt=VOCABULARY_SUGGESTION_PROMPT,
+            app_name=_app_name("vocab-suggestion"),
+            options=llm.InferenceOptions.fast(),
+        )
+        LOG.info("end:   generating vocabulary suggestions (n=%d)", note_count)
+
+        try:
+            last_line_json = _parse_last_line_as_json(response)
+            return VocabSuggestionResponse.deserialize(last_line_json).words
         except Exception as e:
             raise KgError(
                 "I was unable to parse the last line of the LLM response's as JSON.",

@@ -1,5 +1,6 @@
 import base64
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 from app.zhongwen import ankiconnect, colorize, llmgen, tts
 from iafisher import timehelper
@@ -50,39 +51,37 @@ def main_anki_word(hanzi: str, translation: str, *, image: bool) -> None:
     LOG.info("saving MP3 files to %s", d)
 
     word_audio = d / "word.mp3"
-    tts.save_mp3(hanzi, word_audio)
     sentence1_audio = d / "sentence1.mp3"
-    tts.save_mp3(llm_word_note.sentence1_hanzi, sentence1_audio)
     sentence2_audio = d / "sentence2.mp3"
-    tts.save_mp3(llm_word_note.sentence2_hanzi, sentence2_audio)
     question1_audio = d / "question1.mp3"
-    tts.save_mp3(llm_word_note.question1_hanzi, question1_audio)
     answer1_audio = d / "answer1.mp3"
-    tts.save_mp3(llm_word_note.answer1_hanzi, answer1_audio)
 
-    # TODO(2026-10): Generate images in parallel with audio.
+    def gen_audio():
+        generate_audio(
+            hanzi,
+            llm_word_note,
+            word_audio=word_audio,
+            sentence1_audio=sentence1_audio,
+            sentence2_audio=sentence2_audio,
+            question1_audio=question1_audio,
+            answer1_audio=answer1_audio,
+        )
+
     if image:
-        sentence1_image_bytes = llmgen.generate_image(
-            llm_word_note.sentence1_translation
-        )
-        sentence2_image_bytes = llmgen.generate_image(
-            llm_word_note.sentence2_translation
-        )
-        question1_image_bytes = llmgen.generate_image(
-            f"{llm_word_note.question1_translation} {llm_word_note.answer1_translation}"
-        )
+        # Generate audio and image in parallel.
+        with ThreadPoolExecutor() as executor:
+            audio_fut = executor.submit(gen_audio)
+            image_fut = executor.submit(
+                generate_image, hanzi, translation, llm_word_note
+            )
 
-        sentence1_image = f"{hanzi}_sentence1.jpg"
-        sentence2_image = f"{hanzi}_sentence2.jpg"
-        question1_image = f"{hanzi}_question1.jpg"
-
-        ankiconnect.store_media_file(sentence1_image, sentence1_image_bytes)
-        ankiconnect.store_media_file(sentence2_image, sentence2_image_bytes)
-        ankiconnect.store_media_file(question1_image, question1_image_bytes)
+            audio_fut.result()
+            sentence1_image, sentence2_image, question1_image = image_fut.result()
     else:
-        sentence1_image = None
-        sentence2_image = None
-        question1_image = None
+        gen_audio()
+        sentence1_image = ""
+        sentence2_image = ""
+        question1_image = ""
 
     pinyin = llm_word_note.pinyin
     colorized_pinyin, colorized_hanzi = colorize.colorize_pinyin_hanzi(pinyin, hanzi)
@@ -131,6 +130,37 @@ def main_anki_word(hanzi: str, translation: str, *, image: bool) -> None:
     print(note.answer1_translation)
 
 
+def generate_audio(
+    hanzi: str,
+    llm_word_note: llmgen.LLMWordNote,
+    *,
+    word_audio: pathlib.Path,
+    sentence1_audio: pathlib.Path,
+    sentence2_audio: pathlib.Path,
+    question1_audio: pathlib.Path,
+    answer1_audio: pathlib.Path,
+) -> None:
+    tts.save_mp3(hanzi, word_audio)
+    tts.save_mp3(llm_word_note.sentence1_hanzi, sentence1_audio)
+    tts.save_mp3(llm_word_note.sentence2_hanzi, sentence2_audio)
+    tts.save_mp3(llm_word_note.question1_hanzi, question1_audio)
+    tts.save_mp3(llm_word_note.answer1_hanzi, answer1_audio)
+
+
+def generate_image(
+    hanzi: str, translation: str, llm_word_note: llmgen.LLMWordNote
+) -> Tuple[str, str, str]:
+    image_bytes = llmgen.generate_image(translation, llm_word_note)
+
+    # Use a single image for all three sentences.
+    sentence1_image = f"{hanzi}.jpg"
+    sentence2_image = sentence1_image
+    question1_image = sentence1_image
+
+    ankiconnect.store_media_file(sentence1_image, image_bytes)
+    return sentence1_image, sentence2_image, question1_image
+
+
 def main_anki_vocab(*, cutoff_days: int = 10, only_print_count: bool):
     cards = ankiconnect.search_cards(f'"note:{ankiconnect.WORD_NOTE_TYPE}"')
     note_ids = {c.note for c in cards if c.interval >= cutoff_days}
@@ -138,12 +168,7 @@ def main_anki_vocab(*, cutoff_days: int = 10, only_print_count: bool):
         print(len(note_ids))
     else:
         notes = ankiconnect.fetch_notes_by_id(list(note_ids))
-        print(
-            ", ".join(
-                f"{n.fields['hanzi'].value} '{n.fields['translation'].value}'"
-                for n in notes
-            )
-        )
+        print(", ".join(ankiconnect.word_note_to_string(n) for n in notes))
 
 
 """
@@ -167,6 +192,13 @@ def main_games_dui_bu_dui(*, n: int = 8) -> None:
 
 def main_games_translate_text(*, topic: str) -> None:
     print(llmgen.generate_text(topic))
+
+
+def main_suggest_words(*, topic: str, n: int = 5) -> None:
+    notes = ankiconnect.search_notes(f'"note:{ankiconnect.WORD_NOTE_TYPE}"')
+    suggestions = llmgen.generate_vocabulary_suggestions(topic, notes, n=n)
+    for i, suggestion in enumerate(suggestions, start=1):
+        print(f"{i}. {suggestion.hanzi} {suggestion.pinyin} '{suggestion.translation}'")
 
 
 def main_test_check_word(hanzi: str) -> None:
@@ -205,6 +237,9 @@ anki_cmd.add2(
     main_anki_character,
     less_logging=False,
     help="Create an Anki note for a character.",
+)
+anki_cmd.add2(
+    "suggest-words", main_suggest_words, help="Suggest the next words to learn."
 )
 anki_cmd.add2(
     "word",
