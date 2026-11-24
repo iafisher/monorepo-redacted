@@ -5,7 +5,6 @@ from .base import APIWrapper
 from .claude import Claude
 from .gemini import Gemini
 from .gpt import GPT
-from .mercury import Mercury
 from .model_names import *
 
 
@@ -335,21 +334,6 @@ for model_name in GeminiModel:
     # TODO(2026-01): Use Gemini API to get token limit
     # https://ai.google.dev/gemini-api/docs/tokens?lang=python#context-windows
     match model_name:
-        case GeminiModel.GEMINI_2_5_FLASH:
-            model_info = ModelInfo(
-                Gemini,
-                family=MODEL_FAMILY_GEMINI,
-                token_limit=1_048_576,
-                nicknames=[],
-                tags=[TAG_FAST],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("0.30"),
-                    per_1m_output_tokens=Decimal("2.50"),
-                    per_1m_reasoning_tokens=Decimal("2.50"),
-                    per_1m_cache_read_tokens=Decimal("0.03"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
         case GeminiModel.GEMINI_3_8_FLASH:
             model_info = ModelInfo(
                 Gemini,
@@ -407,26 +391,6 @@ for model_name in GeminiModel:
 
     MODEL_TO_INFO[model_name] = model_info
 
-
-# https://docs.inceptionlabs.ai/get-started/models
-for model_name in MercuryModel:
-    match model_name:
-        case MERCURY_2:
-            model_info = ModelInfo(
-                Mercury,
-                family=MODEL_FAMILY_MERCURY,
-                token_limit=128_000,
-                nicknames=["mercury"],
-                token_cost=TokenCost(
-                    per_1m_input_tokens=Decimal("0.25"),
-                    per_1m_output_tokens=Decimal("0.75"),
-                    per_1m_reasoning_tokens=None,
-                    per_1m_cache_read_tokens=Decimal("0.025"),
-                    per_1m_cache_creation_tokens=None,
-                ),
-            )
-
-    MODEL_TO_INFO[model_name] = model_info
 
 MODEL_FAMILY_TO_INFO = {
     MODEL_FAMILY_CLAUDE: ModelFamilyInfo(

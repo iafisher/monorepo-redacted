@@ -141,16 +141,6 @@ class BaseTool(ABC):
             # parameters. (Other providers allow this.)
         )
 
-    def to_mercury_param(self) -> StrDict:
-        return {
-            "type": "function",
-            "function": {
-                "name": self.get_name(),
-                "description": self.get_plain_description(),
-                "parameters": self.get_input_schema(),
-            },
-        }
-
 
 class ToolError(Exception):
     """

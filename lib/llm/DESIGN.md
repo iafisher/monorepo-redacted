@@ -14,7 +14,7 @@ response = llm.oneshot(db, "What is the capital of Ecuador?", model=model, app_n
 ```
 
 ## Model support
-`lib/llm` supports models from OpenAI (GPT), Anthropic (Claude), and Google (Gemini), with experimental support for Inception Labs's [Mercury 2](https://docs.inceptionlabs.ai/get-started/models) model.
+`lib/llm` supports models from OpenAI (GPT), Anthropic (Claude), and Google (Gemini).
 
 ## Storage
 LLM conversations are stored in the `llm_v3_conversations` table in Postgres. The raw JSON of the conversation is stored as a blob.

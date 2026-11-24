@@ -68,7 +68,9 @@ def message_to_bookmark(message: StrDict, time_created: dt.datetime) -> Bookmark
     )
 
 
-url_pattern = re.compile(r'https://blaggregator.herokuapp.com[^"]+')
+# Starting in November 2026, the parent domain of the URL changed from
+# 'herokuapp.com' to 'recurse.com'.
+url_pattern = re.compile(r'https://blaggregator.(herokuapp|recurse).com[^"]+')
 
 
 def extract_url(message: StrDict) -> str:

@@ -25,7 +25,6 @@ from .model_names import (
     ClaudeModel,
     GptModel,
     GeminiModel,
-    MercuryModel,
     ANY_FAST_MODEL,
     ANY_MODEL,
     ANY_SLOW_MODEL,
@@ -33,5 +32,4 @@ from .model_names import (
     MODEL_FAMILY_CLAUDE,
     MODEL_FAMILY_GPT,
     MODEL_FAMILY_GEMINI,
-    MODEL_FAMILY_MERCURY,
 )

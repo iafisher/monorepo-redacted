@@ -43,23 +43,17 @@ class ClaudeModel(StrEnum):
 
 
 class GeminiModel(StrEnum):
-    GEMINI_2_5_FLASH = "gemini-2.5-flash"
     GEMINI_3_8_FLASH = "gemini-3.8-flash"
     GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_3_PRO = "gemini-3.1-pro-preview"
     GEMINI_MOCK_WEB_SEARCH = "gemini-mock-web-search"
 
-    GEMINI_FLASH_LATEST = GEMINI_2_5_FLASH
+    GEMINI_FLASH_LATEST = GEMINI_3_8_FLASH
     GEMINI_PRO_LATEST = GEMINI_3_PRO
-
-
-class MercuryModel(StrEnum):
-    MERCURY_2 = "mercury-2"
 
 
 MODEL_FAMILY_CLAUDE = "claude"
 MODEL_FAMILY_GEMINI = "gemini"
 MODEL_FAMILY_GPT = "gpt"
-MODEL_FAMILY_MERCURY = "mercury"
 
 COMPACTION_MODEL = GeminiModel.GEMINI_FLASH_LATEST
